@@ -31,3 +31,27 @@ def get_status():
         "mode": "live",
         "gnn": "not_loaded"
     }
+@app.get("/api/transactions")
+def get_transactions():
+    return {
+        "transactions": [
+            {
+                "id": "tx-demo-001",
+                "operation": "write",
+                "status": "committed",
+                "risk_score": 0.23
+            },
+            {
+                "id": "tx-demo-002",
+                "operation": "rename",
+                "status": "committed",
+                "risk_score": 0.71
+            },
+            {
+                "id": "tx-demo-003",
+                "operation": "unlink",
+                "status": "in-flight",
+                "risk_score": 0.86
+            }
+        ]
+    }
