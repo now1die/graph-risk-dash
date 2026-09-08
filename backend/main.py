@@ -31,6 +31,8 @@ def get_status():
         "mode": "live",
         "gnn": "not_loaded"
     }
+
+
 @app.get("/api/transactions")
 def get_transactions():
     return {
@@ -54,6 +56,36 @@ def get_transactions():
                 "risk_score": 0.86
             }
         ]
+    }
+
+
+@app.get("/api/transactions/{transaction_id}")
+def get_transaction(transaction_id: str):
+
+    transactions = {
+        "tx-demo-001": {
+            "id": "tx-demo-001",
+            "operation": "write",
+            "status": "committed",
+            "risk_score": 0.23,
+            "operations": 2
+        },
+
+        "tx-demo-002": {
+            "id": "tx-demo-002",
+            "operation": "rename",
+            "status": "committed",
+            "risk_score": 0.71,
+            "operations": 3
+        },
+
+        "tx-demo-003": {
+            "id": "tx-demo-003",
+            "operation": "unlink",
+            "status": "in-flight",
+            "risk_score": 0.86,
+            "operations": 5
+        }
     }
 
     transaction = transactions.get(transaction_id)
