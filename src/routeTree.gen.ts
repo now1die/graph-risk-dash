@@ -11,7 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as GraphRouteImport } from './routes/graph'
+import { Route as ModelRouteImport } from './routes/model'
 import { Route as RiskRouteImport } from './routes/risk'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SimulationRouteImport } from './routes/simulation'
 import { Route as TransactionsRouteImport } from './routes/transactions'
 
 const IndexRoute = IndexRouteImport.update({
@@ -24,9 +27,24 @@ const GraphRoute = GraphRouteImport.update({
   path: '/graph',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModelRoute = ModelRouteImport.update({
+  id: '/model',
+  path: '/model',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RiskRoute = RiskRouteImport.update({
   id: '/risk',
   path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SimulationRoute = SimulationRouteImport.update({
+  id: '/simulation',
+  path: '/simulation',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransactionsRoute = TransactionsRouteImport.update({
@@ -38,34 +56,68 @@ const TransactionsRoute = TransactionsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
+  '/model': typeof ModelRoute
   '/risk': typeof RiskRoute
+  '/settings': typeof SettingsRoute
+  '/simulation': typeof SimulationRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
+  '/model': typeof ModelRoute
   '/risk': typeof RiskRoute
+  '/settings': typeof SettingsRoute
+  '/simulation': typeof SimulationRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/graph': typeof GraphRoute
+  '/model': typeof ModelRoute
   '/risk': typeof RiskRoute
+  '/settings': typeof SettingsRoute
+  '/simulation': typeof SimulationRoute
   '/transactions': typeof TransactionsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/graph' | '/risk' | '/transactions'
+  fullPaths:
+    | '/'
+    | '/graph'
+    | '/model'
+    | '/risk'
+    | '/settings'
+    | '/simulation'
+    | '/transactions'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/graph' | '/risk' | '/transactions'
-  id: '__root__' | '/' | '/graph' | '/risk' | '/transactions'
+  to:
+    | '/'
+    | '/graph'
+    | '/model'
+    | '/risk'
+    | '/settings'
+    | '/simulation'
+    | '/transactions'
+  id:
+    | '__root__'
+    | '/'
+    | '/graph'
+    | '/model'
+    | '/risk'
+    | '/settings'
+    | '/simulation'
+    | '/transactions'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   GraphRoute: typeof GraphRoute
+  ModelRoute: typeof ModelRoute
   RiskRoute: typeof RiskRoute
+  SettingsRoute: typeof SettingsRoute
+  SimulationRoute: typeof SimulationRoute
   TransactionsRoute: typeof TransactionsRoute
 }
 
@@ -85,11 +137,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GraphRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/model': {
+      id: '/model'
+      path: '/model'
+      fullPath: '/model'
+      preLoaderRoute: typeof ModelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/risk': {
       id: '/risk'
       path: '/risk'
       fullPath: '/risk'
       preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/simulation': {
+      id: '/simulation'
+      path: '/simulation'
+      fullPath: '/simulation'
+      preLoaderRoute: typeof SimulationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transactions': {
@@ -105,7 +178,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GraphRoute: GraphRoute,
+  ModelRoute: ModelRoute,
   RiskRoute: RiskRoute,
+  SettingsRoute: SettingsRoute,
+  SimulationRoute: SimulationRoute,
   TransactionsRoute: TransactionsRoute,
 }
 export const routeTree = rootRouteImport
