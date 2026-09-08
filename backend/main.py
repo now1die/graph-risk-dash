@@ -55,3 +55,12 @@ def get_transactions():
             }
         ]
     }
+
+    transaction = transactions.get(transaction_id)
+
+    if transaction is None:
+        return {
+            "error": "Transaction not found"
+        }
+
+    return transaction
