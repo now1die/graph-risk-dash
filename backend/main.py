@@ -153,3 +153,44 @@ def create_file(request: CreateRequest):
         "inodes_touched": transaction.inodes_touched,
         "metadata": transaction.metadata
     }
+@app.post("/api/vfs/write")
+def write_file(request: WriteRequest):
+
+    transaction = vfs.write(
+        request.path,
+        request.size
+    )
+
+    return {
+        "transaction_id": transaction.txn_id,
+        "operation": transaction.op_type,
+        "inodes_touched": transaction.inodes_touched,
+        "metadata": transaction.metadata
+    }
+    @app.post("/api/vfs/rename")
+def rename_file(request: RenameRequest):
+
+    transaction = vfs.rename(
+        request.old_path,
+        request.new_path
+    )
+
+    return {
+        "transaction_id": transaction.txn_id,
+        "operation": transaction.op_type,
+        "inodes_touched": transaction.inodes_touched,
+        "metadata": transaction.metadata
+    }
+    @app.delete("/api/vfs/unlink")
+def unlink_file(request: UnlinkRequest):
+
+    transaction = vfs.unlink(
+        request.path
+    )
+
+    return {
+        "transaction_id": transaction.txn_id,
+        "operation": transaction.op_type,
+        "inodes_touched": transaction.inodes_touched,
+        "metadata": transaction.metadata
+    }
