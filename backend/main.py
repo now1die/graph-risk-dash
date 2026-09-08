@@ -167,7 +167,7 @@ def write_file(request: WriteRequest):
         "inodes_touched": transaction.inodes_touched,
         "metadata": transaction.metadata
     }
-    @app.post("/api/vfs/rename")
+@app.post("/api/vfs/rename")
 def rename_file(request: RenameRequest):
 
     transaction = vfs.rename(
@@ -181,7 +181,7 @@ def rename_file(request: RenameRequest):
         "inodes_touched": transaction.inodes_touched,
         "metadata": transaction.metadata
     }
-    @app.delete("/api/vfs/unlink")
+@app.delete("/api/vfs/unlink")
 def unlink_file(request: UnlinkRequest):
 
     transaction = vfs.unlink(
