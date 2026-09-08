@@ -1,5 +1,6 @@
 from datetime import datetime
 import uuid
+from typing import Dict, List
 
 from .models import Inode
 from .transaction import Transaction, TransactionLog
@@ -8,7 +9,7 @@ from .transaction import Transaction, TransactionLog
 class VirtualFileSystem:
 
     def __init__(self):
-        self.inodes: dict[str, Inode] = {}
+        self.inodes: Dict[str, Inode] = {}
         self.next_inode_id = 1
 
         self.transaction_log = TransactionLog()
@@ -16,7 +17,11 @@ class VirtualFileSystem:
         # Create root directory
         self._add_inode("/", "directory")
 
-    def _add_inode(self, path: str, inode_type: str = "file"):
+    def _add_inode(
+        self,
+        path: str,
+        inode_type: str = "file"
+    ):
         inode = Inode(
             inode_id=self.next_inode_id,
             path=path,
@@ -31,11 +36,11 @@ class VirtualFileSystem:
     def _create_transaction(
         self,
         op_type: str,
-        inode_ids: list[int],
-        metadata: dict
+        inode_ids: List[int],
+        metadata: Dict
     ):
         transaction = Transaction(
-            txn_id=f"tx-{uuid.uuid4().hex[:8]}",
+            txn_id="tx-" + uuid.uuid4().hex[:8],
             op_type=op_type,
             inodes_touched=inode_ids,
             timestamp=datetime.utcnow().isoformat(),
@@ -46,7 +51,11 @@ class VirtualFileSystem:
 
         return transaction
 
-    def create(self, path: str, inode_type: str = "file"):
+    def create(
+        self,
+        path: str,
+        inode_type: str = "file"
+    ):
 
         if path in self.inodes:
             raise ValueError("Path already exists")
@@ -64,7 +73,11 @@ class VirtualFileSystem:
             }
         )
 
-    def write(self, path: str, size: int):
+    def write(
+        self,
+        path: str,
+        size: int
+    ):
 
         if path not in self.inodes:
             raise ValueError("File does not exist")
@@ -103,7 +116,11 @@ class VirtualFileSystem:
             }
         )
 
-    def rename(self, old_path: str, new_path: str):
+    def rename(
+        self,
+        old_path: str,
+        new_path: str
+    ):
 
         if old_path not in self.inodes:
             raise ValueError("Source path does not exist")
