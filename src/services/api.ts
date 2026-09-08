@@ -89,7 +89,9 @@ export interface CrashResult {
 }
 
 // Maps transaction operation targets onto graph node ids.
-const pathToNodeId = new Map(fsNodes.map((n) => [n.path, n.id]));
+const pathToNodeId = new Map(
+  fsNodes.filter((n) => n.kind === "file" || n.kind === "journal").map((n) => [n.path, n.id]),
+);
 
 function touchedNodesFor(txId: string): string[] {
   const tx = transactions.find((t) => t.id === txId);
