@@ -113,3 +113,17 @@ def get_vfs():
             for inode in vfs.get_all_inodes()
         ]
     }
+@app.get("/api/vfs")
+def get_vfs():
+    return {
+        "inodes": [
+            {
+                "inode_id": inode.inode_id,
+                "path": inode.path,
+                "type": inode.inode_type,
+                "size": inode.size,
+                "dirty": inode.dirty
+            }
+            for inode in vfs.get_all_inodes()
+        ]
+    }
