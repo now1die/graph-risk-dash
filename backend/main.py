@@ -18,6 +18,19 @@ class CreateRequest(BaseModel):
     path: str
     inode_type: str = "file"
 
+class WriteRequest(BaseModel):
+    path: str
+    size: int
+
+
+class RenameRequest(BaseModel):
+    old_path: str
+    new_path: str
+
+
+class UnlinkRequest(BaseModel):
+    path: str
+
 
 # Allow the React frontend to communicate with the backend
 app.add_middleware(
