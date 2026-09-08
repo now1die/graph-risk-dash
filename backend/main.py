@@ -128,3 +128,17 @@ def get_vfs():
             for inode in vfs.get_all_inodes()
         ]
     }
+@app.post("/api/vfs/create")
+def create_file(request: CreateRequest):
+
+    transaction = vfs.create(
+        request.path,
+        request.inode_type
+    )
+
+    return {
+        "transaction_id": transaction.txn_id,
+        "operation": transaction.op_type,
+        "inodes_touched": transaction.inodes_touched,
+        "metadata": transaction.metadata
+    }
