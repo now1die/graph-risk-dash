@@ -1,6 +1,7 @@
 from vfs.filesystem import VirtualFileSystem
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 app = FastAPI(
     title="VFSim Backend",
