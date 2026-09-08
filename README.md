@@ -6,10 +6,3 @@ Build the complete frontend-only VFSim — Graph-Based Risk-Aware Filesystem Sim
 
 **Live app**: https://graph-risk-dash.lovable.app
 
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-```
