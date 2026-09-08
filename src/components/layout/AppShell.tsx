@@ -16,12 +16,12 @@ import { useSelection } from "@/components/vfsim/selection";
 
 const nav = [
   { to: "/", label: "Overview", icon: LayoutDashboard, exact: true },
-  { to: "/graph", label: "Graph Explorer", icon: GitBranch },
-  { to: "/transactions", label: "Transactions", icon: ListTree },
-  { to: "/risk", label: "Risk Analysis", icon: ShieldAlert },
-  { to: "/simulation", label: "Crash Lab", icon: Zap },
-  { to: "/model", label: "GNN Model", icon: BrainCircuit },
-  { to: "/settings", label: "Settings", icon: Settings },
+  { to: "/graph", label: "Graph Explorer", icon: GitBranch, exact: false },
+  { to: "/transactions", label: "Transactions", icon: ListTree, exact: false },
+  { to: "/risk", label: "Risk Analysis", icon: ShieldAlert, exact: false },
+  { to: "/simulation", label: "Crash Lab", icon: Zap, exact: false },
+  { to: "/model", label: "GNN Model", icon: BrainCircuit, exact: false },
+  { to: "/settings", label: "Settings", icon: Settings, exact: false },
 ] as const;
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -41,11 +41,11 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           </div>
           <nav className="flex-1 space-y-1 p-3">
-            {nav.map(({ to, label, icon: Icon, ...rest }) => (
+            {nav.map(({ to, label, icon: Icon, exact }) => (
               <Link
                 key={to}
                 to={to}
-                activeOptions={{ exact: "exact" in rest ? rest.exact : false }}
+                activeOptions={{ exact }}
                 className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[status=active]:bg-sidebar-accent data-[status=active]:text-sidebar-primary"
               >
                 <Icon className="size-4" aria-hidden />
