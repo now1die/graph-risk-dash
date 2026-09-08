@@ -3,12 +3,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+
 app = FastAPI(
     title="VFSim Backend",
     description="Backend API for VFSim",
     version="0.1.0"
 )
+
+
 vfs = VirtualFileSystem()
+
+
+class CreateRequest(BaseModel):
+    path: str
+    inode_type: str = "file"
+
 
 # Allow the React frontend to communicate with the backend
 app.add_middleware(
@@ -99,21 +108,8 @@ def get_transaction(transaction_id: str):
         }
 
     return transaction
-@app.get("/api/vfs")
-def get_vfs():
 
-    return {
-        "inodes": [
-            {
-                "inode_id": inode.inode_id,
-                "path": inode.path,
-                "type": inode.inode_type,
-                "size": inode.size,
-                "dirty": inode.dirty
-            }
-            for inode in vfs.get_all_inodes()
-        ]
-    }
+
 @app.get("/api/vfs")
 def get_vfs():
     return {
@@ -128,6 +124,8 @@ def get_vfs():
             for inode in vfs.get_all_inodes()
         ]
     }
+
+
 @app.post("/api/vfs/create")
 def create_file(request: CreateRequest):
 
