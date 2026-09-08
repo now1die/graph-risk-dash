@@ -1,20 +1,20 @@
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Any
+from typing import Any, List, Dict
 
 
 @dataclass
 class Transaction:
     txn_id: str
     op_type: str
-    inodes_touched: list[int]
+    inodes_touched: List[int]
     timestamp: str
-    metadata: dict[str, Any] = field(default_factory=dict)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 class TransactionLog:
+
     def __init__(self):
-        self.transactions: list[Transaction] = []
+        self.transactions: List[Transaction] = []
 
     def add(self, transaction: Transaction):
         self.transactions.append(transaction)
