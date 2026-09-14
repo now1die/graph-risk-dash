@@ -16,7 +16,6 @@ def get_touched_inode_indices(vfs, transaction):
     for inode_id in transaction.inodes_touched:
 
         if inode_id in inode_id_to_index:
-
             touched_indices.append(
                 inode_id_to_index[inode_id]
             )
@@ -26,13 +25,54 @@ def get_touched_inode_indices(vfs, transaction):
 
 def get_1hop_inode_neighbors(graph, touched_indices):
     """
-    Find inode nodes that are directly connected
-    to the touched inode nodes.
+    Find nodes directly connected to the touched inode nodes.
 
-    Returns the touched nodes plus their neighbors.
+    Returns node identifiers grouped by node type.
     """
 
-    neighbors = set(touched_indices)
+    result = {
+        "inode": set(touched_indices),
+        "dirent": set(),
+        "fd": set()
+    }
+
+    # ---------------------------------------------------------
+    # CONTAINS
+    # dirent -> inode
+    # ---------------------------------------------------------
+
+    relation = ("dirent", "contains", "inode")
+
+    if relation in graph.edge_types:
+
+        edge_index = graph[relation].edge_index
+
+        for source, target in edge_index.t():
+
+            source = int(source)
+            target = int(target)
+
+            if target in touched_indices:
+                result["dirent"].add(source)
+
+    # ---------------------------------------------------------
+    # OPEN_BY
+    # fd -> inode
+    # ---------------------------------------------------------
+
+    relation = ("fd", "open_by", "inode")
+
+    if relation in graph.edge_types:
+
+        edge_index = graph[relation].edge_index
+
+        for source, target in edge_index.t():
+
+            source = int(source)
+            target = int(target)
+
+            if target in touched_indices:
+                result["fd"].add(source)
 
     # ---------------------------------------------------------
     # INODE -> INODE RELATIONS
@@ -56,9 +96,14 @@ def get_1hop_inode_neighbors(graph, touched_indices):
             target = int(target)
 
             if source in touched_indices:
-                neighbors.add(target)
+                result["inode"].add(target)
 
             if target in touched_indices:
-                neighbors.add(source)
+                result["inode"].add(source)
 
-    return sorted(neighbors)
+    # Convert sets to sorted lists
+    result["inode"] = sorted(result["inode"])
+    result["dirent"] = sorted(result["dirent"])
+    result["fd"] = sorted(result["fd"])
+
+    return result
