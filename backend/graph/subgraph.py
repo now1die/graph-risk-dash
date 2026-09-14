@@ -37,8 +37,25 @@ def get_1hop_inode_neighbors(graph, touched_indices):
     }
 
     # ---------------------------------------------------------
-    # CONTAINS
-    # dirent -> inode
+    # INODE -> DIRENT
+    # ---------------------------------------------------------
+
+    relation = ("inode", "contains", "dirent")
+
+    if relation in graph.edge_types:
+
+        edge_index = graph[relation].edge_index
+
+        for source, target in edge_index.t():
+
+            source = int(source)
+            target = int(target)
+
+            if source in touched_indices:
+                result["dirent"].add(target)
+
+    # ---------------------------------------------------------
+    # DIRENT -> INODE
     # ---------------------------------------------------------
 
     relation = ("dirent", "contains", "inode")
@@ -56,8 +73,7 @@ def get_1hop_inode_neighbors(graph, touched_indices):
                 result["dirent"].add(source)
 
     # ---------------------------------------------------------
-    # OPEN_BY
-    # fd -> inode
+    # FD -> INODE
     # ---------------------------------------------------------
 
     relation = ("fd", "open_by", "inode")
@@ -75,7 +91,7 @@ def get_1hop_inode_neighbors(graph, touched_indices):
                 result["fd"].add(source)
 
     # ---------------------------------------------------------
-    # INODE -> INODE RELATIONS
+    # INODE -> INODE
     # ---------------------------------------------------------
 
     inode_relations = [
@@ -110,49 +126,66 @@ def get_1hop_inode_neighbors(graph, touched_indices):
 
 def get_2hop_subgraph(graph, touched_indices):
     """
-    Find the nodes within two graph hops
+    Find nodes within two graph hops
     of the touched inode nodes.
 
     Returns node identifiers grouped by node type.
     """
 
-    # Start with the touched nodes
     result = {
         "inode": set(touched_indices),
         "dirent": set(),
         "fd": set()
     }
 
-    # First hop
+    # ---------------------------------------------------------
+    # FIRST HOP
+    # ---------------------------------------------------------
+
     first_hop = get_1hop_inode_neighbors(
         graph,
         touched_indices
     )
 
     for node_type in result:
+
         result[node_type].update(
             first_hop[node_type]
         )
 
     # ---------------------------------------------------------
-    # Second hop
+    # SECOND HOP
     # ---------------------------------------------------------
 
-    current_inodes = list(result["inode"])
+    second_hop_inode_indices = list(
+        result["inode"]
+    )
 
     second_hop = get_1hop_inode_neighbors(
         graph,
-        current_inodes
+        second_hop_inode_indices
     )
 
     for node_type in result:
+
         result[node_type].update(
             second_hop[node_type]
         )
 
-    # Convert sets to sorted lists
-    result["inode"] = sorted(result["inode"])
-    result["dirent"] = sorted(result["dirent"])
-    result["fd"] = sorted(result["fd"])
+    # ---------------------------------------------------------
+    # SORT RESULTS
+    # ---------------------------------------------------------
+
+    result["inode"] = sorted(
+        result["inode"]
+    )
+
+    result["dirent"] = sorted(
+        result["dirent"]
+    )
+
+    result["fd"] = sorted(
+        result["fd"]
+    )
 
     return result
