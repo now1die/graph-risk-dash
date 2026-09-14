@@ -1,0 +1,261 @@
+import torch
+
+from vfs.filesystem import VirtualFileSystem
+from graph.builder import build_graph
+from graph.subgraph import (
+    get_touched_inode_indices,
+    get_2hop_subgraph
+)
+from gnn.model import RiskGNN
+
+
+# =========================================
+# CREATE FILESYSTEM
+# =========================================
+
+vfs = VirtualFileSystem()
+
+vfs.create(
+    "/home",
+    "directory"
+)
+
+vfs.create(
+    "/home/test.txt",
+    "file"
+)
+
+vfs.create(
+    "/home/data.txt",
+    "file"
+)
+
+
+# =========================================
+# HARD LINK
+# =========================================
+
+vfs.link(
+    "/home/test.txt",
+    "/home/test_link.txt"
+)
+
+
+# =========================================
+# RENAME
+# =========================================
+
+rename_tx = vfs.rename(
+    "/home/data.txt",
+    "/home/renamed.txt"
+)
+
+
+# =========================================
+# OPEN FILE
+# =========================================
+
+open_tx = vfs.open(
+    "/home/test.txt",
+    "r"
+)
+
+
+# =========================================
+# BUILD GRAPH
+# =========================================
+
+graph = build_graph(vfs)
+
+print("=========================================")
+print("GRAPH")
+print("=========================================")
+print(graph)
+
+
+print()
+print("=========================================")
+print("NODE TYPES")
+print("=========================================")
+print(graph.node_types)
+
+
+print()
+print("=========================================")
+print("EDGE TYPES")
+print("=========================================")
+print(graph.edge_types)
+
+
+# =========================================
+# PRINT NODE FEATURES
+# =========================================
+
+print()
+print("=========================================")
+print("LINK FEATURES")
+print("=========================================")
+print(graph["link"].x)
+
+
+print()
+print("=========================================")
+print("RENAME FEATURES")
+print("=========================================")
+print(graph["rename"].x)
+
+
+print()
+print("=========================================")
+print("FD FEATURES")
+print("=========================================")
+print(graph["fd"].x)
+
+
+# =========================================
+# PRINT IMPORTANT EDGES
+# =========================================
+
+print()
+print("=========================================")
+print("LINK EDGES")
+print("=========================================")
+print(
+    graph[
+        "inode",
+        "has_link",
+        "link"
+    ].edge_index
+)
+
+print(
+    graph[
+        "link",
+        "points_to",
+        "inode"
+    ].edge_index
+)
+
+
+print()
+print("=========================================")
+print("RENAME EDGES")
+print("=========================================")
+print(
+    graph[
+        "inode",
+        "rename_source",
+        "rename"
+    ].edge_index
+)
+
+print(
+    graph[
+        "rename",
+        "rename_target",
+        "inode"
+    ].edge_index
+)
+
+
+print()
+print("=========================================")
+print("OPEN EDGES")
+print("=========================================")
+print(
+    graph[
+        "fd",
+        "open_by",
+        "inode"
+    ].edge_index
+)
+
+print(
+    graph[
+        "inode",
+        "opened_by",
+        "fd"
+    ].edge_index
+)
+
+
+# =========================================
+# TOUCHED INODES
+# =========================================
+
+touched_indices = get_touched_inode_indices(
+    vfs,
+    rename_tx
+)
+
+print()
+print("=========================================")
+print("TOUCHED INODE INDICES")
+print("=========================================")
+print(touched_indices)
+
+
+# =========================================
+# 2-HOP SUBGRAPH
+# =========================================
+
+subgraph = get_2hop_subgraph(
+    graph,
+    touched_indices
+)
+
+print()
+print("=========================================")
+print("2-HOP SUBGRAPH")
+print("=========================================")
+print(subgraph)
+
+
+# =========================================
+# CREATE GNN
+# =========================================
+
+model = RiskGNN()
+
+model.eval()
+
+
+# =========================================
+# GNN FORWARD PASS
+# =========================================
+
+with torch.no_grad():
+
+    risk_logit = model(
+        graph.x_dict,
+        graph.edge_index_dict,
+        touched_indices
+    )
+
+    risk_probability = torch.sigmoid(
+        risk_logit
+    )
+
+
+# =========================================
+# RESULT
+# =========================================
+
+print()
+print("=========================================")
+print("RISK LOGIT")
+print("=========================================")
+print(risk_logit)
+
+
+print()
+print("=========================================")
+print("RISK PROBABILITY")
+print("=========================================")
+print(risk_probability)
+
+
+print()
+print("=========================================")
+print("TEST COMPLETE")
+print("=========================================")
