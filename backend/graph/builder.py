@@ -210,8 +210,6 @@ def build_graph(vfs):
 
     link_nodes = []
 
-    for inode_id, inode_dirents in {}.items():
-        pass
 
     paths_by_inode = {}
 
