@@ -45,7 +45,7 @@ def make_sample(vfs, transaction, label):
 # NORMAL SCENARIOS
 # =====================================================
 
-def normal_create():
+def normal_create(file_number):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -53,8 +53,14 @@ def normal_create():
         "directory"
     )
 
+    for i in range(1, file_number):
+        vfs.create(
+            "/home/file" + str(i) + ".txt",
+            "file"
+        )
+
     transaction = vfs.create(
-        "/home/file.txt",
+        "/home/file" + str(file_number) + ".txt",
         "file"
     )
 
@@ -65,7 +71,7 @@ def normal_create():
     )
 
 
-def normal_write():
+def normal_write(size):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -80,7 +86,7 @@ def normal_write():
 
     transaction = vfs.write(
         "/home/file.txt",
-        100
+        size
     )
 
     return make_sample(
@@ -90,7 +96,7 @@ def normal_write():
     )
 
 
-def normal_open_close():
+def normal_open_close(mode):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -105,7 +111,7 @@ def normal_open_close():
 
     vfs.open(
         "/home/file.txt",
-        "r"
+        mode
     )
 
     transaction = vfs.close(3)
@@ -117,7 +123,7 @@ def normal_open_close():
     )
 
 
-def normal_rename():
+def normal_rename(number_of_files):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -125,13 +131,14 @@ def normal_rename():
         "directory"
     )
 
-    vfs.create(
-        "/home/file.txt",
-        "file"
-    )
+    for i in range(1, number_of_files + 1):
+        vfs.create(
+            "/home/file" + str(i) + ".txt",
+            "file"
+        )
 
     transaction = vfs.rename(
-        "/home/file.txt",
+        "/home/file1.txt",
         "/home/document.txt"
     )
 
@@ -142,7 +149,7 @@ def normal_rename():
     )
 
 
-def normal_hard_link():
+def normal_hard_link(number_of_existing_files):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -150,14 +157,15 @@ def normal_hard_link():
         "directory"
     )
 
-    vfs.create(
-        "/home/file.txt",
-        "file"
-    )
+    for i in range(1, number_of_existing_files + 1):
+        vfs.create(
+            "/home/file" + str(i) + ".txt",
+            "file"
+        )
 
     transaction = vfs.link(
-        "/home/file.txt",
-        "/home/file_link.txt"
+        "/home/file1.txt",
+        "/home/file1_link.txt"
     )
 
     return make_sample(
@@ -171,7 +179,7 @@ def normal_hard_link():
 # RISKY SCENARIOS
 # =====================================================
 
-def risky_rename_chain():
+def risky_rename_chain(number_of_renames):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -184,20 +192,22 @@ def risky_rename_chain():
         "file"
     )
 
-    vfs.rename(
-        "/home/file.txt",
-        "/home/tmp1.txt"
-    )
+    current_path = "/home/file.txt"
 
-    vfs.rename(
-        "/home/tmp1.txt",
-        "/home/tmp2.txt"
-    )
+    for i in range(1, number_of_renames + 1):
 
-    transaction = vfs.rename(
-        "/home/tmp2.txt",
-        "/home/tmp3.txt"
-    )
+        new_path = (
+            "/home/tmp"
+            + str(i)
+            + ".txt"
+        )
+
+        transaction = vfs.rename(
+            current_path,
+            new_path
+        )
+
+        current_path = new_path
 
     return make_sample(
         vfs,
@@ -206,7 +216,7 @@ def risky_rename_chain():
     )
 
 
-def risky_many_links():
+def risky_many_links(number_of_links):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -219,19 +229,20 @@ def risky_many_links():
         "file"
     )
 
-    vfs.link(
-        "/home/file.txt",
-        "/home/link1.txt"
-    )
+    for i in range(1, number_of_links):
 
-    vfs.link(
-        "/home/file.txt",
-        "/home/link2.txt"
-    )
+        vfs.link(
+            "/home/file.txt",
+            "/home/link"
+            + str(i)
+            + ".txt"
+        )
 
     transaction = vfs.link(
         "/home/file.txt",
-        "/home/link3.txt"
+        "/home/link"
+        + str(number_of_links)
+        + ".txt"
     )
 
     return make_sample(
@@ -241,7 +252,10 @@ def risky_many_links():
     )
 
 
-def risky_open_write():
+def risky_mixed_operations(
+    number_of_renames,
+    number_of_links
+):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -254,15 +268,31 @@ def risky_open_write():
         "file"
     )
 
-    vfs.open(
-        "/home/file.txt",
-        "w"
-    )
+    for i in range(1, number_of_links + 1):
 
-    transaction = vfs.write(
-        "/home/file.txt",
-        1000
-    )
+        vfs.link(
+            "/home/file.txt",
+            "/home/link"
+            + str(i)
+            + ".txt"
+        )
+
+    current_path = "/home/file.txt"
+
+    for i in range(1, number_of_renames + 1):
+
+        new_path = (
+            "/home/tmp"
+            + str(i)
+            + ".txt"
+        )
+
+        transaction = vfs.rename(
+            current_path,
+            new_path
+        )
+
+        current_path = new_path
 
     return make_sample(
         vfs,
@@ -271,7 +301,7 @@ def risky_open_write():
     )
 
 
-def risky_mixed_operations():
+def risky_multiple_file_renames(number_of_files):
     vfs = VirtualFileSystem()
 
     vfs.create(
@@ -279,64 +309,33 @@ def risky_mixed_operations():
         "directory"
     )
 
-    vfs.create(
-        "/home/file.txt",
-        "file"
-    )
+    for i in range(1, number_of_files + 1):
 
-    vfs.link(
-        "/home/file.txt",
-        "/home/link.txt"
-    )
+        vfs.create(
+            "/home/file"
+            + str(i)
+            + ".txt",
+            "file"
+        )
 
-    vfs.rename(
-        "/home/file.txt",
-        "/home/tmp.txt"
-    )
+    for i in range(1, number_of_files):
+
+        vfs.rename(
+            "/home/file"
+            + str(i)
+            + ".txt",
+            "/home/tmp"
+            + str(i)
+            + ".txt"
+        )
 
     transaction = vfs.rename(
-        "/home/tmp.txt",
-        "/home/final.txt"
-    )
-
-    return make_sample(
-        vfs,
-        transaction,
-        1
-    )
-
-
-def risky_multiple_renames():
-    vfs = VirtualFileSystem()
-
-    vfs.create(
-        "/home",
-        "directory"
-    )
-
-    vfs.create(
-        "/home/a.txt",
-        "file"
-    )
-
-    vfs.create(
-        "/home/b.txt",
-        "file"
-    )
-
-    vfs.rename(
-        "/home/a.txt",
-        "/home/a1.txt"
-    )
-
-    vfs.rename(
-        "/home/a1.txt",
-        "/home/a2.txt"
-    )
-
-    transaction = vfs.rename(
-        "/home/a2.txt",
-        "/home/a3.txt"
+        "/home/file"
+        + str(number_of_files)
+        + ".txt",
+        "/home/tmp"
+        + str(number_of_files)
+        + ".txt"
     )
 
     return make_sample(
@@ -354,34 +353,173 @@ def generate_dataset():
 
     samples = []
 
-    # Normal samples
-    samples.append(normal_create())
-    samples.append(normal_write())
-    samples.append(normal_open_close())
-    samples.append(normal_rename())
-    samples.append(normal_hard_link())
+    # -------------------------------------------------
+    # NORMAL SAMPLES
+    # -------------------------------------------------
 
-    # Repeat normal scenarios with different
-    # filesystem states
-    samples.append(normal_create())
-    samples.append(normal_write())
-    samples.append(normal_open_close())
-    samples.append(normal_rename())
-    samples.append(normal_hard_link())
+    samples.append(
+        normal_create(1)
+    )
 
-    # Risky samples
-    samples.append(risky_rename_chain())
-    samples.append(risky_many_links())
-    samples.append(risky_open_write())
-    samples.append(risky_mixed_operations())
-    samples.append(risky_multiple_renames())
+    samples.append(
+        normal_create(2)
+    )
 
-    # Repeat risky scenarios
-    samples.append(risky_rename_chain())
-    samples.append(risky_many_links())
-    samples.append(risky_open_write())
-    samples.append(risky_mixed_operations())
-    samples.append(risky_multiple_renames())
+    samples.append(
+        normal_create(3)
+    )
+
+    samples.append(
+        normal_create(4)
+    )
+
+    samples.append(
+        normal_write(10)
+    )
+
+    samples.append(
+        normal_write(100)
+    )
+
+    samples.append(
+        normal_write(500)
+    )
+
+    samples.append(
+        normal_write(1000)
+    )
+
+    samples.append(
+        normal_open_close("r")
+    )
+
+    samples.append(
+        normal_open_close("w")
+    )
+
+    samples.append(
+        normal_open_close("a")
+    )
+
+    samples.append(
+        normal_rename(1)
+    )
+
+    samples.append(
+        normal_rename(2)
+    )
+
+    samples.append(
+        normal_rename(3)
+    )
+
+    samples.append(
+        normal_hard_link(1)
+    )
+
+    samples.append(
+        normal_hard_link(2)
+    )
+
+    samples.append(
+        normal_hard_link(3)
+    )
+
+    samples.append(
+        normal_create(5)
+    )
+
+    samples.append(
+        normal_write(250)
+    )
+
+    samples.append(
+        normal_write(750)
+    )
+
+    # -------------------------------------------------
+    # RISKY SAMPLES
+    # -------------------------------------------------
+
+    samples.append(
+        risky_rename_chain(2)
+    )
+
+    samples.append(
+        risky_rename_chain(3)
+    )
+
+    samples.append(
+        risky_rename_chain(4)
+    )
+
+    samples.append(
+        risky_rename_chain(5)
+    )
+
+    samples.append(
+        risky_many_links(2)
+    )
+
+    samples.append(
+        risky_many_links(3)
+    )
+
+    samples.append(
+        risky_many_links(4)
+    )
+
+    samples.append(
+        risky_many_links(5)
+    )
+
+    samples.append(
+        risky_mixed_operations(2, 2)
+    )
+
+    samples.append(
+        risky_mixed_operations(3, 2)
+    )
+
+    samples.append(
+        risky_mixed_operations(2, 3)
+    )
+
+    samples.append(
+        risky_mixed_operations(3, 3)
+    )
+
+    samples.append(
+        risky_mixed_operations(4, 3)
+    )
+
+    samples.append(
+        risky_multiple_file_renames(2)
+    )
+
+    samples.append(
+        risky_multiple_file_renames(3)
+    )
+
+    samples.append(
+        risky_multiple_file_renames(4)
+    )
+
+    samples.append(
+        risky_rename_chain(6)
+    )
+
+    samples.append(
+        risky_many_links(6)
+    )
+
+    samples.append(
+        risky_mixed_operations(4, 4)
+    )
+
+    samples.append(
+        risky_multiple_file_renames(5)
+    )
 
     return samples
 
@@ -398,7 +536,10 @@ if __name__ == "__main__":
     print("DATASET CREATED")
     print("----------------")
 
-    print("Total samples:", len(dataset))
+    print(
+        "Total samples:",
+        len(dataset)
+    )
 
     normal_count = 0
     risky_count = 0
@@ -430,8 +571,15 @@ if __name__ == "__main__":
         )
 
     print()
-    print("NORMAL SAMPLES:", normal_count)
-    print("RISKY SAMPLES:", risky_count)
+    print(
+        "NORMAL SAMPLES:",
+        normal_count
+    )
+
+    print(
+        "RISKY SAMPLES:",
+        risky_count
+    )
 
     print()
     print("DATASET TEST COMPLETE")
