@@ -11,14 +11,21 @@ def build_graph(vfs):
     - inode
     - dirent
     - fd
+    - link
+    - rename
 
     Relations:
     - inode -> dirent : contains
     - dirent -> inode : points_to
-    - inode -> inode  : links
+
+    - inode -> link   : has_link
+    - link -> inode   : points_to
+
     - fd -> inode     : open_by
     - inode -> fd     : opened_by
-    - inode -> inode  : renames
+
+    - inode -> rename : rename_source
+    - rename -> inode : rename_target
     """
 
     data = HeteroData()
@@ -198,8 +205,13 @@ def build_graph(vfs):
         )
 
     # =================================================
-    # HARD LINKS
+    # LINK NODES
     # =================================================
+
+    link_nodes = []
+
+    for inode_id, inode_dirents in {}.items():
+        pass
 
     paths_by_inode = {}
 
@@ -214,8 +226,10 @@ def build_graph(vfs):
             dirent
         )
 
-    link_sources = []
-    link_targets = []
+    link_source_nodes = []
+    link_target_nodes = []
+
+    link_index = 0
 
     for inode_id, inode_dirents in (
         paths_by_inode.items()
@@ -231,23 +245,56 @@ def build_graph(vfs):
                 len(inode_dirents) - 1
             ):
 
-                link_sources.append(
+                link_nodes.append(
+                    [1.0]
+                )
+
+                link_source_nodes.append(
                     inode_index
                 )
 
-                link_targets.append(
-                    inode_index
+                link_target_nodes.append(
+                    link_index
                 )
 
-    if link_sources:
+                link_index += 1
+
+    if link_nodes:
+
+        data["link"].x = torch.tensor(
+            link_nodes,
+            dtype=torch.float
+        )
 
         data[
             "inode",
-            "links",
+            "has_link",
+            "link"
+        ].edge_index = torch.tensor(
+            [
+                link_source_nodes,
+                link_target_nodes
+            ],
+            dtype=torch.long
+        )
+
+        data[
+            "link",
+            "points_to",
             "inode"
         ].edge_index = torch.tensor(
-            [link_sources, link_targets],
+            [
+                link_target_nodes,
+                link_source_nodes
+            ],
             dtype=torch.long
+        )
+
+    else:
+
+        data["link"].x = torch.empty(
+            (0, 1),
+            dtype=torch.float
         )
 
     # =================================================
@@ -332,10 +379,6 @@ def build_graph(vfs):
             dtype=torch.long
         )
 
-        # =============================================
-        # INODE -> FD
-        # =============================================
-
         data[
             "inode",
             "opened_by",
@@ -346,43 +389,87 @@ def build_graph(vfs):
         )
 
     # =================================================
-    # RENAMES
+    # RENAME NODES
     # =================================================
 
-    if rename_history:
+    rename_features = []
 
-        rename_sources = []
-        rename_targets = []
+    rename_source_nodes = []
+    rename_target_nodes = []
 
-        for rename in rename_history:
+    for rename_index, rename in enumerate(
+        rename_history
+    ):
 
-            inode_id = rename["inode_id"]
+        inode_id = rename["inode_id"]
 
-            if inode_id in inode_id_to_index:
+        if inode_id not in inode_id_to_index:
+            continue
 
-                inode_index = (
-                    inode_id_to_index[
-                        inode_id
-                    ]
-                )
+        old_path = rename["old_path"]
+        new_path = rename["new_path"]
 
-                rename_sources.append(
-                    inode_index
-                )
+        old_path_length = len(
+            old_path
+        )
 
-                rename_targets.append(
-                    inode_index
-                )
+        new_path_length = len(
+            new_path
+        )
 
-        if rename_sources:
+        rename_features.append([
+            float(old_path_length),
+            float(new_path_length)
+        ])
 
-            data[
-                "inode",
-                "renames",
-                "inode"
-            ].edge_index = torch.tensor(
-                [rename_sources, rename_targets],
-                dtype=torch.long
-            )
+        inode_index = (
+            inode_id_to_index[inode_id]
+        )
+
+        rename_source_nodes.append(
+            inode_index
+        )
+
+        rename_target_nodes.append(
+            rename_index
+        )
+
+    if rename_features:
+
+        data["rename"].x = torch.tensor(
+            rename_features,
+            dtype=torch.float
+        )
+
+        data[
+            "inode",
+            "rename_source",
+            "rename"
+        ].edge_index = torch.tensor(
+            [
+                rename_source_nodes,
+                rename_target_nodes
+            ],
+            dtype=torch.long
+        )
+
+        data[
+            "rename",
+            "rename_target",
+            "inode"
+        ].edge_index = torch.tensor(
+            [
+                rename_target_nodes,
+                rename_source_nodes
+            ],
+            dtype=torch.long
+        )
+
+    else:
+
+        data["rename"].x = torch.empty(
+            (0, 2),
+            dtype=torch.float
+        )
 
     return data
