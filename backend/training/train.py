@@ -112,6 +112,7 @@ def train_model():
 
             output = model(
                 graph,
+                graph.x_dict,
                 touched_inodes
             )
 
