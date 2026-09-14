@@ -101,6 +101,55 @@ def get_1hop_inode_neighbors(graph, touched_indices):
             if target in touched_indices:
                 result["inode"].add(source)
 
+    result["inode"] = sorted(result["inode"])
+    result["dirent"] = sorted(result["dirent"])
+    result["fd"] = sorted(result["fd"])
+
+    return result
+
+
+def get_2hop_subgraph(graph, touched_indices):
+    """
+    Find the nodes within two graph hops
+    of the touched inode nodes.
+
+    Returns node identifiers grouped by node type.
+    """
+
+    # Start with the touched nodes
+    result = {
+        "inode": set(touched_indices),
+        "dirent": set(),
+        "fd": set()
+    }
+
+    # First hop
+    first_hop = get_1hop_inode_neighbors(
+        graph,
+        touched_indices
+    )
+
+    for node_type in result:
+        result[node_type].update(
+            first_hop[node_type]
+        )
+
+    # ---------------------------------------------------------
+    # Second hop
+    # ---------------------------------------------------------
+
+    current_inodes = list(result["inode"])
+
+    second_hop = get_1hop_inode_neighbors(
+        graph,
+        current_inodes
+    )
+
+    for node_type in result:
+        result[node_type].update(
+            second_hop[node_type]
+        )
+
     # Convert sets to sorted lists
     result["inode"] = sorted(result["inode"])
     result["dirent"] = sorted(result["dirent"])
