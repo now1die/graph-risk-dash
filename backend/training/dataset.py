@@ -1,6 +1,6 @@
 from vfs.filesystem import VirtualFileSystem
 
-from graph.builder import build_hetero_graph
+from graph.builder import build_graph
 
 from graph.subgraph import (
     get_touched_inode_indices,
@@ -23,7 +23,7 @@ def create_normal_sample():
     )
 
     # Build graph from current filesystem
-    graph = build_hetero_graph(vfs)
+    graph = build_graph(vfs)
 
     # Find inode indices touched by the transaction
     touched_indices = get_touched_inode_indices(
@@ -69,7 +69,7 @@ def create_risky_sample():
     )
 
     # Build graph from current filesystem
-    graph = build_hetero_graph(vfs)
+    graph = build_graph(vfs)
 
     # Find inode indices touched by the transaction
     touched_indices = get_touched_inode_indices(
