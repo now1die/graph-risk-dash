@@ -14,7 +14,10 @@ def create_normal_sample():
     vfs = VirtualFileSystem()
 
     # Create a normal directory
-    vfs.create("/home", "directory")
+    vfs.create(
+        "/home",
+        "directory"
+    )
 
     # Create a normal file
     transaction = vfs.create(
@@ -39,9 +42,11 @@ def create_normal_sample():
 
     # Convert touched inode indices
     # from full graph to subgraph indices
-    subgraph_touched_indices = get_subgraph_touched_inode_indices(
-        graph,
-        touched_indices
+    subgraph_touched_indices = (
+        get_subgraph_touched_inode_indices(
+            graph,
+            touched_indices
+        )
     )
 
     return {
@@ -56,16 +61,32 @@ def create_risky_sample():
     vfs = VirtualFileSystem()
 
     # Create a directory
-    vfs.create("/home", "directory")
+    vfs.create(
+        "/home",
+        "directory"
+    )
 
-    # Create several files
-    vfs.create("/home/file1.txt", "file")
-    vfs.create("/home/file2.txt", "file")
-    vfs.create("/home/file3.txt", "file")
+    # Create a file
+    vfs.create(
+        "/home/file.txt",
+        "file"
+    )
 
-    # Delete one file
-    transaction = vfs.unlink(
-        "/home/file1.txt"
+    # Perform a sequence of renames
+    vfs.rename(
+        "/home/file.txt",
+        "/home/tmp1.txt"
+    )
+
+    vfs.rename(
+        "/home/tmp1.txt",
+        "/home/tmp2.txt"
+    )
+
+    # Final rename transaction
+    transaction = vfs.rename(
+        "/home/tmp2.txt",
+        "/home/tmp3.txt"
     )
 
     # Build graph from current filesystem
@@ -85,9 +106,11 @@ def create_risky_sample():
 
     # Convert touched inode indices
     # from full graph to subgraph indices
-    subgraph_touched_indices = get_subgraph_touched_inode_indices(
-        graph,
-        touched_indices
+    subgraph_touched_indices = (
+        get_subgraph_touched_inode_indices(
+            graph,
+            touched_indices
+        )
     )
 
     return {
@@ -99,9 +122,11 @@ def create_risky_sample():
 
 if __name__ == "__main__":
 
-    normal_sample = create_normal_sample()
+    # =============================================
+    # CREATE NORMAL SAMPLE
+    # =============================================
 
-    risky_sample = create_risky_sample()
+    normal_sample = create_normal_sample()
 
     print("NORMAL SAMPLE")
     print("Label:", normal_sample["label"])
@@ -110,11 +135,21 @@ if __name__ == "__main__":
 
     print()
 
+    # =============================================
+    # CREATE RISKY SAMPLE
+    # =============================================
+
+    risky_sample = create_risky_sample()
+
     print("RISKY SAMPLE")
     print("Label:", risky_sample["label"])
     print("Touched:", risky_sample["touched_inodes"])
     print(risky_sample["graph"])
 
     print()
+
+    # =============================================
+    # COMPLETE
+    # =============================================
 
     print("DATASET TEST COMPLETE")
