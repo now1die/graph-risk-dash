@@ -10,14 +10,17 @@ def build_graph(vfs):
     Current graph contains:
     - inode nodes
     - dirent nodes
+    - fd nodes
     - contains edges
     - links edges
+    - open_by edges
     """
 
     data = HeteroData()
 
     inodes = vfs.get_all_inodes()
     dirents = vfs.get_all_dirents()
+    file_handles = list(vfs.file_handles.values())
 
     # ---------------------------------------------------------
     # INODE NODES
@@ -25,6 +28,7 @@ def build_graph(vfs):
 
     if not inodes:
         data["inode"].x = torch.empty((0, 6), dtype=torch.float)
+
     else:
 
         max_size = max(inode.size for inode in inodes)
@@ -65,6 +69,7 @@ def build_graph(vfs):
 
     if not dirents:
         data["dirent"].x = torch.empty((0, 1), dtype=torch.float)
+
     else:
 
         dirent_features = []
@@ -153,6 +158,61 @@ def build_graph(vfs):
             [
                 link_sources,
                 link_targets
+            ],
+            dtype=torch.long
+        )
+
+    # ---------------------------------------------------------
+    # FD NODES
+    # ---------------------------------------------------------
+
+    if not file_handles:
+
+        data["fd"].x = torch.empty((0, 3), dtype=torch.float)
+
+    else:
+
+        fd_features = []
+
+        for file_handle in file_handles:
+
+            is_read = 1.0 if "r" in file_handle.mode else 0.0
+            is_write = 1.0 if "w" in file_handle.mode else 0.0
+            is_append = 1.0 if "a" in file_handle.mode else 0.0
+
+            fd_features.append([
+                is_read,
+                is_write,
+                is_append
+            ])
+
+        data["fd"].x = torch.tensor(
+            fd_features,
+            dtype=torch.float
+        )
+
+    # ---------------------------------------------------------
+    # OPEN_BY EDGES
+    # ---------------------------------------------------------
+
+    if file_handles:
+
+        source_nodes = []
+        target_nodes = []
+
+        for fd_index, file_handle in enumerate(file_handles):
+
+            target_inode_index = inode_id_to_index[
+                file_handle.inode_id
+            ]
+
+            source_nodes.append(fd_index)
+            target_nodes.append(target_inode_index)
+
+        data["fd", "open_by", "inode"].edge_index = torch.tensor(
+            [
+                source_nodes,
+                target_nodes
             ],
             dtype=torch.long
         )
