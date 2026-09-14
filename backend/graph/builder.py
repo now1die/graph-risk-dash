@@ -11,6 +11,7 @@ def build_graph(vfs):
     - inode nodes
     - dirent nodes
     - contains edges
+    - links edges
     """
 
     data = HeteroData()
@@ -97,10 +98,6 @@ def build_graph(vfs):
 
         for dirent_index, dirent in enumerate(dirents):
 
-            parent_inode_index = inode_id_to_index[
-                dirent.parent_inode_id
-            ]
-
             target_inode_index = inode_id_to_index[
                 dirent.inode_id
             ]
@@ -112,6 +109,50 @@ def build_graph(vfs):
             [
                 source_nodes,
                 target_nodes
+            ],
+            dtype=torch.long
+        )
+
+    # ---------------------------------------------------------
+    # LINKS EDGES
+    # ---------------------------------------------------------
+
+    inode_id_to_index = {
+        inode.inode_id: index
+        for index, inode in enumerate(inodes)
+    }
+
+    paths_by_inode = {}
+
+    for dirent in dirents:
+
+        inode_id = dirent.inode_id
+
+        if inode_id not in paths_by_inode:
+            paths_by_inode[inode_id] = []
+
+        paths_by_inode[inode_id].append(dirent)
+
+    link_sources = []
+    link_targets = []
+
+    for inode_id, inode_dirents in paths_by_inode.items():
+
+        if len(inode_dirents) > 1:
+
+            inode_index = inode_id_to_index[inode_id]
+
+            for _ in range(len(inode_dirents) - 1):
+
+                link_sources.append(inode_index)
+                link_targets.append(inode_index)
+
+    if link_sources:
+
+        data["inode", "links", "inode"].edge_index = torch.tensor(
+            [
+                link_sources,
+                link_targets
             ],
             dtype=torch.long
         )
