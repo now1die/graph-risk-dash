@@ -5,7 +5,8 @@ from graph.builder import build_graph
 from graph.subgraph import (
     get_touched_inode_indices,
     get_2hop_subgraph,
-    extract_2hop_subgraph
+    extract_2hop_subgraph,
+    get_subgraph_touched_inode_indices
 )
 from gnn.model import RiskGNN
 
@@ -229,6 +230,22 @@ print(subgraph)
 
 
 # =========================================
+# SUBGRAPH TOUCHED INODE INDICES
+# =========================================
+
+subgraph_touched_indices = get_subgraph_touched_inode_indices(
+    graph,
+    touched_indices
+)
+
+print()
+print("=========================================")
+print("SUBGRAPH TOUCHED INODE INDICES")
+print("=========================================")
+print(subgraph_touched_indices)
+
+
+# =========================================
 # EXTRACTED NODE TYPES
 # =========================================
 
@@ -300,9 +317,9 @@ model.eval()
 with torch.no_grad():
 
     risk_logit = model(
-        graph.x_dict,
-        graph.edge_index_dict,
-        touched_indices
+        subgraph.x_dict,
+        subgraph.edge_index_dict,
+        subgraph_touched_indices
     )
 
     risk_probability = torch.sigmoid(
