@@ -199,35 +199,57 @@ class VirtualFileSystem:
 
     def unlink(self, path: str):
 
-        if path not in self.inodes:
-            raise ValueError("Path does not exist")
+    if path not in self.inodes:
+        raise ValueError("Path does not exist")
 
-        if path == "/":
-            raise ValueError("Cannot unlink root directory")
+    if path == "/":
+        raise ValueError("Cannot unlink root directory")
 
-        inode = self.inodes[path]
+    inode = self.inodes[path]
 
-        # Remove the directory entry for this path
-        if path in self.dirents:
-            del self.dirents[path]
+    # Remove the directory entry for this path
+    if path in self.dirents:
+        del self.dirents[path]
 
-        # Decrease the hard-link count
-        inode.link_count -= 1
-        inode.dirty = True
+    # Decrease the hard-link count
+    inode.link_count -= 1
+    inode.dirty = True
 
-        # Only remove the inode when the last
-        # hard link has been removed
-        if inode.link_count <= 0:
+    # If other hard links still exist,
+    # move the inode to one of the remaining paths
+    if inode.link_count > 0:
+
+        remaining_path = None
+
+        for dirent_path, dirent in self.dirents.items():
+
+            if dirent.inode_id == inode.inode_id:
+
+                remaining_path = dirent_path
+                break
+
+        if remaining_path is not None:
+
             del self.inodes[path]
 
-        return self._create_transaction(
-            "unlink",
-            [inode.inode_id],
-            {
-                "path": path,
-                "remaining_link_count": inode.link_count
-            }
-        )
+            inode.path = remaining_path
+
+            self.inodes[remaining_path] = inode
+
+    else:
+
+        # No hard links remain.
+        # Remove the inode completely.
+        del self.inodes[path]
+
+    return self._create_transaction(
+        "unlink",
+        [inode.inode_id],
+        {
+            "path": path,
+            "remaining_link_count": inode.link_count
+        }
+    )
 
     def rename(
         self,
