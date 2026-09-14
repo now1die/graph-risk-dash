@@ -14,6 +14,7 @@ def build_graph(vfs):
     - contains edges
     - links edges
     - open_by edges
+    - renames edges
     """
 
     data = HeteroData()
@@ -21,6 +22,7 @@ def build_graph(vfs):
     inodes = vfs.get_all_inodes()
     dirents = vfs.get_all_dirents()
     file_handles = list(vfs.file_handles.values())
+    rename_history = vfs.get_rename_history()
 
     # ---------------------------------------------------------
     # INODE NODES
@@ -216,5 +218,35 @@ def build_graph(vfs):
             ],
             dtype=torch.long
         )
+
+    # ---------------------------------------------------------
+    # RENAMES EDGES
+    # ---------------------------------------------------------
+
+    if rename_history:
+
+        rename_sources = []
+        rename_targets = []
+
+        for rename in rename_history:
+
+            inode_id = rename["inode_id"]
+
+            if inode_id in inode_id_to_index:
+
+                inode_index = inode_id_to_index[inode_id]
+
+                rename_sources.append(inode_index)
+                rename_targets.append(inode_index)
+
+        if rename_sources:
+
+            data["inode", "renames", "inode"].edge_index = torch.tensor(
+                [
+                    rename_sources,
+                    rename_targets
+                ],
+                dtype=torch.long
+            )
 
     return data
