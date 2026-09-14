@@ -111,8 +111,8 @@ def train_model():
             # -----------------------------------------
 
             output = model(
-                graph,
-                graph["inode"].x,
+                graph.x_dict,
+                graph.edge_index_dict,
                 touched_inodes
             )
 
