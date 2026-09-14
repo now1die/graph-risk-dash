@@ -2,7 +2,7 @@ from datetime import datetime
 import uuid
 from typing import Dict, List
 
-from .models import Inode, DirEntry
+from .models import Inode, DirEntry, FileHandle
 from .transaction import Transaction, TransactionLog
 
 
@@ -14,6 +14,10 @@ class VirtualFileSystem:
 
         # Store directory-entry relationships
         self.dirents: Dict[str, DirEntry] = {}
+
+        # Store currently open file descriptors
+        self.file_handles: Dict[int, FileHandle] = {}
+        self.next_fd = 3
 
         self.transaction_log = TransactionLog()
 
@@ -132,6 +136,7 @@ class VirtualFileSystem:
                 "bytes_written": size
             }
         )
+
     def link(
         self,
         existing_path: str,
@@ -188,6 +193,7 @@ class VirtualFileSystem:
                 "name": name
             }
         )
+
     def unlink(self, path: str):
 
         if path not in self.inodes:
@@ -266,6 +272,61 @@ class VirtualFileSystem:
                 "old_path": old_path,
                 "new_path": new_path,
                 "new_parent_path": new_parent_path
+            }
+        )
+
+    def open(
+        self,
+        path: str,
+        mode: str = "r"
+    ):
+
+        if path not in self.inodes:
+            raise ValueError("File does not exist")
+
+        inode = self.inodes[path]
+
+        if inode.inode_type != "file":
+            raise ValueError("Cannot open a directory")
+
+        fd = self.next_fd
+        self.next_fd += 1
+
+        file_handle = FileHandle(
+            fd=fd,
+            inode_id=inode.inode_id,
+            path=path,
+            mode=mode
+        )
+
+        self.file_handles[fd] = file_handle
+
+        return self._create_transaction(
+            "open",
+            [inode.inode_id],
+            {
+                "path": path,
+                "fd": fd,
+                "mode": mode
+            }
+        )
+
+    def close(
+        self,
+        fd: int
+    ):
+
+        if fd not in self.file_handles:
+            raise ValueError("File descriptor is not open")
+
+        file_handle = self.file_handles.pop(fd)
+
+        return self._create_transaction(
+            "close",
+            [file_handle.inode_id],
+            {
+                "fd": fd,
+                "path": file_handle.path
             }
         )
 
