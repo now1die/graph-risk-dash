@@ -7,14 +7,17 @@ def build_graph(vfs):
     Convert the current VFS state into a PyTorch Geometric
     heterogeneous graph.
 
-    Current graph contains:
+    Graph contains:
     - inode nodes
     - dirent nodes
     - fd nodes
-    - contains edges
-    - links edges
-    - open_by edges
-    - renames edges
+
+    Relations:
+    - inode -> dirent : contains
+    - dirent -> inode : contains
+    - inode -> inode  : links
+    - fd -> inode     : open_by
+    - inode -> inode  : renames
     """
 
     data = HeteroData()
@@ -29,11 +32,18 @@ def build_graph(vfs):
     # ---------------------------------------------------------
 
     if not inodes:
-        data["inode"].x = torch.empty((0, 6), dtype=torch.float)
+
+        data["inode"].x = torch.empty(
+            (0, 6),
+            dtype=torch.float
+        )
 
     else:
 
-        max_size = max(inode.size for inode in inodes)
+        max_size = max(
+            inode.size
+            for inode in inodes
+        )
 
         if max_size == 0:
             max_size = 1
@@ -42,12 +52,26 @@ def build_graph(vfs):
 
         for inode in inodes:
 
-            is_file = 1.0 if inode.inode_type == "file" else 0.0
-            is_directory = 1.0 if inode.inode_type == "directory" else 0.0
+            is_file = (
+                1.0
+                if inode.inode_type == "file"
+                else 0.0
+            )
 
-            normalized_size = inode.size / max_size
+            is_directory = (
+                1.0
+                if inode.inode_type == "directory"
+                else 0.0
+            )
 
-            depth = inode.path.count("/") - 1
+            normalized_size = (
+                inode.size / max_size
+            )
+
+            depth = (
+                inode.path.count("/")
+                - 1
+            )
 
             feature = [
                 is_file,
@@ -66,11 +90,24 @@ def build_graph(vfs):
         )
 
     # ---------------------------------------------------------
+    # INODE ID -> GRAPH INDEX
+    # ---------------------------------------------------------
+
+    inode_id_to_index = {
+        inode.inode_id: index
+        for index, inode in enumerate(inodes)
+    }
+
+    # ---------------------------------------------------------
     # DIRENT NODES
     # ---------------------------------------------------------
 
     if not dirents:
-        data["dirent"].x = torch.empty((0, 1), dtype=torch.float)
+
+        data["dirent"].x = torch.empty(
+            (0, 1),
+            dtype=torch.float
+        )
 
     else:
 
@@ -78,7 +115,9 @@ def build_graph(vfs):
 
         for dirent in dirents:
 
-            name_length = len(dirent.name)
+            name_length = len(
+                dirent.name
+            )
 
             dirent_features.append([
                 float(name_length)
@@ -90,7 +129,8 @@ def build_graph(vfs):
         )
 
     # ---------------------------------------------------------
-    # CONTAINS EDGES
+    # INODE -> DIRENT
+    # inode contains dirent
     # ---------------------------------------------------------
 
     if dirents:
@@ -98,21 +138,65 @@ def build_graph(vfs):
         source_nodes = []
         target_nodes = []
 
-        inode_id_to_index = {
-            inode.inode_id: index
-            for index, inode in enumerate(inodes)
-        }
+        for dirent_index, dirent in enumerate(dirents):
+
+            parent_inode_index = (
+                inode_id_to_index[
+                    dirent.parent_inode_id
+                ]
+            )
+
+            source_nodes.append(
+                parent_inode_index
+            )
+
+            target_nodes.append(
+                dirent_index
+            )
+
+        data[
+            "inode",
+            "contains",
+            "dirent"
+        ].edge_index = torch.tensor(
+            [
+                source_nodes,
+                target_nodes
+            ],
+            dtype=torch.long
+        )
+
+    # ---------------------------------------------------------
+    # DIRENT -> INODE
+    # dirent points to target inode
+    # ---------------------------------------------------------
+
+    if dirents:
+
+        source_nodes = []
+        target_nodes = []
 
         for dirent_index, dirent in enumerate(dirents):
 
-            target_inode_index = inode_id_to_index[
-                dirent.inode_id
-            ]
+            target_inode_index = (
+                inode_id_to_index[
+                    dirent.inode_id
+                ]
+            )
 
-            source_nodes.append(dirent_index)
-            target_nodes.append(target_inode_index)
+            source_nodes.append(
+                dirent_index
+            )
 
-        data["dirent", "contains", "inode"].edge_index = torch.tensor(
+            target_nodes.append(
+                target_inode_index
+            )
+
+        data[
+            "dirent",
+            "contains",
+            "inode"
+        ].edge_index = torch.tensor(
             [
                 source_nodes,
                 target_nodes
@@ -124,11 +208,6 @@ def build_graph(vfs):
     # LINKS EDGES
     # ---------------------------------------------------------
 
-    inode_id_to_index = {
-        inode.inode_id: index
-        for index, inode in enumerate(inodes)
-    }
-
     paths_by_inode = {}
 
     for dirent in dirents:
@@ -136,9 +215,12 @@ def build_graph(vfs):
         inode_id = dirent.inode_id
 
         if inode_id not in paths_by_inode:
+
             paths_by_inode[inode_id] = []
 
-        paths_by_inode[inode_id].append(dirent)
+        paths_by_inode[inode_id].append(
+            dirent
+        )
 
     link_sources = []
     link_targets = []
@@ -147,16 +229,29 @@ def build_graph(vfs):
 
         if len(inode_dirents) > 1:
 
-            inode_index = inode_id_to_index[inode_id]
+            inode_index = (
+                inode_id_to_index[inode_id]
+            )
 
-            for _ in range(len(inode_dirents) - 1):
+            for _ in range(
+                len(inode_dirents) - 1
+            ):
 
-                link_sources.append(inode_index)
-                link_targets.append(inode_index)
+                link_sources.append(
+                    inode_index
+                )
+
+                link_targets.append(
+                    inode_index
+                )
 
     if link_sources:
 
-        data["inode", "links", "inode"].edge_index = torch.tensor(
+        data[
+            "inode",
+            "links",
+            "inode"
+        ].edge_index = torch.tensor(
             [
                 link_sources,
                 link_targets
@@ -170,7 +265,10 @@ def build_graph(vfs):
 
     if not file_handles:
 
-        data["fd"].x = torch.empty((0, 3), dtype=torch.float)
+        data["fd"].x = torch.empty(
+            (0, 3),
+            dtype=torch.float
+        )
 
     else:
 
@@ -178,9 +276,23 @@ def build_graph(vfs):
 
         for file_handle in file_handles:
 
-            is_read = 1.0 if "r" in file_handle.mode else 0.0
-            is_write = 1.0 if "w" in file_handle.mode else 0.0
-            is_append = 1.0 if "a" in file_handle.mode else 0.0
+            is_read = (
+                1.0
+                if "r" in file_handle.mode
+                else 0.0
+            )
+
+            is_write = (
+                1.0
+                if "w" in file_handle.mode
+                else 0.0
+            )
+
+            is_append = (
+                1.0
+                if "a" in file_handle.mode
+                else 0.0
+            )
 
             fd_features.append([
                 is_read,
@@ -202,16 +314,29 @@ def build_graph(vfs):
         source_nodes = []
         target_nodes = []
 
-        for fd_index, file_handle in enumerate(file_handles):
+        for fd_index, file_handle in enumerate(
+            file_handles
+        ):
 
-            target_inode_index = inode_id_to_index[
-                file_handle.inode_id
-            ]
+            target_inode_index = (
+                inode_id_to_index[
+                    file_handle.inode_id
+                ]
+            )
 
-            source_nodes.append(fd_index)
-            target_nodes.append(target_inode_index)
+            source_nodes.append(
+                fd_index
+            )
 
-        data["fd", "open_by", "inode"].edge_index = torch.tensor(
+            target_nodes.append(
+                target_inode_index
+            )
+
+        data[
+            "fd",
+            "open_by",
+            "inode"
+        ].edge_index = torch.tensor(
             [
                 source_nodes,
                 target_nodes
@@ -234,14 +359,27 @@ def build_graph(vfs):
 
             if inode_id in inode_id_to_index:
 
-                inode_index = inode_id_to_index[inode_id]
+                inode_index = (
+                    inode_id_to_index[
+                        inode_id
+                    ]
+                )
 
-                rename_sources.append(inode_index)
-                rename_targets.append(inode_index)
+                rename_sources.append(
+                    inode_index
+                )
+
+                rename_targets.append(
+                    inode_index
+                )
 
         if rename_sources:
 
-            data["inode", "renames", "inode"].edge_index = torch.tensor(
+            data[
+                "inode",
+                "renames",
+                "inode"
+            ].edge_index = torch.tensor(
                 [
                     rename_sources,
                     rename_targets
