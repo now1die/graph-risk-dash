@@ -207,18 +207,25 @@ class VirtualFileSystem:
 
         inode = self.inodes[path]
 
-        # Remove the inode
-        del self.inodes[path]
-
-        # Remove its directory entry
+        # Remove the directory entry for this path
         if path in self.dirents:
             del self.dirents[path]
+
+        # Decrease the hard-link count
+        inode.link_count -= 1
+        inode.dirty = True
+
+        # Only remove the inode when the last
+        # hard link has been removed
+        if inode.link_count <= 0:
+            del self.inodes[path]
 
         return self._create_transaction(
             "unlink",
             [inode.inode_id],
             {
-                "path": path
+                "path": path,
+                "remaining_link_count": inode.link_count
             }
         )
 
