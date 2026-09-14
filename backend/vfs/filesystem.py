@@ -19,6 +19,9 @@ class VirtualFileSystem:
         self.file_handles: Dict[int, FileHandle] = {}
         self.next_fd = 3
 
+        # Store rename relationships
+        self.rename_history = []
+
         self.transaction_log = TransactionLog()
 
         # Create root directory
@@ -250,6 +253,13 @@ class VirtualFileSystem:
 
         inode = self.inodes.pop(old_path)
 
+        # Store rename relationship
+        self.rename_history.append({
+            "inode_id": inode.inode_id,
+            "old_path": old_path,
+            "new_path": new_path
+        })
+
         # Update inode path
         inode.path = new_path
         inode.dirty = True
@@ -345,3 +355,7 @@ class VirtualFileSystem:
     def get_transactions(self):
 
         return self.transaction_log.get_all()
+
+    def get_rename_history(self):
+
+        return self.rename_history
