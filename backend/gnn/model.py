@@ -38,7 +38,6 @@ class RiskGNN(nn.Module):
 
         self.conv1 = HeteroConv({
 
-            # inode -> dirent
             ("inode", "contains", "dirent"):
                 GATConv(
                     (hidden_dim, hidden_dim),
@@ -49,8 +48,7 @@ class RiskGNN(nn.Module):
                     add_self_loops=False
                 ),
 
-            # dirent -> inode
-            ("dirent", "contains", "inode"):
+            ("dirent", "points_to", "inode"):
                 GATConv(
                     (hidden_dim, hidden_dim),
                     hidden_dim,
@@ -60,7 +58,6 @@ class RiskGNN(nn.Module):
                     add_self_loops=False
                 ),
 
-            # inode -> inode
             ("inode", "links", "inode"):
                 GATConv(
                     (hidden_dim, hidden_dim),
@@ -71,7 +68,6 @@ class RiskGNN(nn.Module):
                     add_self_loops=False
                 ),
 
-            # fd -> inode
             ("fd", "open_by", "inode"):
                 GATConv(
                     (hidden_dim, hidden_dim),
@@ -82,7 +78,16 @@ class RiskGNN(nn.Module):
                     add_self_loops=False
                 ),
 
-            # inode -> inode
+            ("inode", "opened_by", "fd"):
+                GATConv(
+                    (hidden_dim, hidden_dim),
+                    hidden_dim,
+                    heads=heads,
+                    concat=True,
+                    dropout=dropout,
+                    add_self_loops=False
+                ),
+
             ("inode", "renames", "inode"):
                 GATConv(
                     (hidden_dim, hidden_dim),
@@ -95,7 +100,6 @@ class RiskGNN(nn.Module):
 
         }, aggr="sum")
 
-        # First GAT layer output dimension
         conv1_dim = hidden_dim * heads
 
         # -----------------------------------------
@@ -114,7 +118,7 @@ class RiskGNN(nn.Module):
                     add_self_loops=False
                 ),
 
-            ("dirent", "contains", "inode"):
+            ("dirent", "points_to", "inode"):
                 GATConv(
                     (conv1_dim, conv1_dim),
                     hidden_dim,
@@ -135,6 +139,16 @@ class RiskGNN(nn.Module):
                 ),
 
             ("fd", "open_by", "inode"):
+                GATConv(
+                    (conv1_dim, conv1_dim),
+                    hidden_dim,
+                    heads=1,
+                    concat=False,
+                    dropout=dropout,
+                    add_self_loops=False
+                ),
+
+            ("inode", "opened_by", "fd"):
                 GATConv(
                     (conv1_dim, conv1_dim),
                     hidden_dim,
@@ -163,22 +177,18 @@ class RiskGNN(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
         # -----------------------------------------
-        # FINAL CLASSIFIER
+        # CLASSIFIER
         # -----------------------------------------
 
         self.mlp = nn.Sequential(
-
             nn.Linear(hidden_dim, 16),
-
             nn.ReLU(),
-
             nn.Dropout(dropout),
-
             nn.Linear(16, 1)
         )
 
     # ---------------------------------------------
-    # FORWARD PASS
+    # FORWARD
     # ---------------------------------------------
 
     def forward(
@@ -188,9 +198,7 @@ class RiskGNN(nn.Module):
         touched_node_ids
     ):
 
-        # Encode each node type
         x_dict = {
-
             "inode":
                 self.inode_encoder(
                     x_dict["inode"]
@@ -207,10 +215,7 @@ class RiskGNN(nn.Module):
                 )
         }
 
-        # -----------------------------------------
-        # GAT LAYER 1
-        # -----------------------------------------
-
+        # GAT layer 1
         x_dict = self.conv1(
             x_dict,
             edge_index_dict
@@ -223,10 +228,7 @@ class RiskGNN(nn.Module):
             for key, value in x_dict.items()
         }
 
-        # -----------------------------------------
-        # GAT LAYER 2
-        # -----------------------------------------
-
+        # GAT layer 2
         x_dict = self.conv2(
             x_dict,
             edge_index_dict
@@ -237,28 +239,19 @@ class RiskGNN(nn.Module):
             for key, value in x_dict.items()
         }
 
-        # -----------------------------------------
-        # SELECT TOUCHED INODES
-        # -----------------------------------------
-
+        # Touched inode embeddings
         inode_embeddings = x_dict["inode"]
 
         touched_embeddings = inode_embeddings[
             touched_node_ids
         ]
 
-        # -----------------------------------------
-        # POOL TOUCHED INODES
-        # -----------------------------------------
-
+        # Mean pooling
         pooled = touched_embeddings.mean(
             dim=0
         )
 
-        # -----------------------------------------
-        # CLASSIFICATION
-        # -----------------------------------------
-
+        # Risk logit
         risk_logit = self.mlp(
             pooled
         )
@@ -266,7 +259,7 @@ class RiskGNN(nn.Module):
         return risk_logit
 
     # ---------------------------------------------
-    # RISK PROBABILITY
+    # PREDICT RISK
     # ---------------------------------------------
 
     def predict_risk(
@@ -282,8 +275,6 @@ class RiskGNN(nn.Module):
             touched_node_ids
         )
 
-        risk_probability = torch.sigmoid(
+        return torch.sigmoid(
             risk_logit
         )
-
-        return risk_probability
