@@ -8,6 +8,8 @@ from graph.subgraph import (
     get_subgraph_touched_inode_indices
 )
 
+import random
+
 
 def make_sample(vfs, transaction, label):
     """
@@ -48,10 +50,7 @@ def make_sample(vfs, transaction, label):
 def normal_create(file_number):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     for i in range(1, file_number):
         vfs.create(
@@ -64,20 +63,13 @@ def normal_create(file_number):
         "file"
     )
 
-    return make_sample(
-        vfs,
-        transaction,
-        0
-    )
+    return make_sample(vfs, transaction, 0)
 
 
 def normal_write(size):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     vfs.create(
         "/home/file.txt",
@@ -89,20 +81,13 @@ def normal_write(size):
         size
     )
 
-    return make_sample(
-        vfs,
-        transaction,
-        0
-    )
+    return make_sample(vfs, transaction, 0)
 
 
 def normal_open_close(mode):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     vfs.create(
         "/home/file.txt",
@@ -116,20 +101,13 @@ def normal_open_close(mode):
 
     transaction = vfs.close(3)
 
-    return make_sample(
-        vfs,
-        transaction,
-        0
-    )
+    return make_sample(vfs, transaction, 0)
 
 
 def normal_rename(number_of_files):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     for i in range(1, number_of_files + 1):
         vfs.create(
@@ -142,20 +120,13 @@ def normal_rename(number_of_files):
         "/home/document.txt"
     )
 
-    return make_sample(
-        vfs,
-        transaction,
-        0
-    )
+    return make_sample(vfs, transaction, 0)
 
 
 def normal_hard_link(number_of_existing_files):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     for i in range(1, number_of_existing_files + 1):
         vfs.create(
@@ -168,11 +139,7 @@ def normal_hard_link(number_of_existing_files):
         "/home/file1_link.txt"
     )
 
-    return make_sample(
-        vfs,
-        transaction,
-        0
-    )
+    return make_sample(vfs, transaction, 0)
 
 
 # =====================================================
@@ -182,10 +149,7 @@ def normal_hard_link(number_of_existing_files):
 def risky_rename_chain(number_of_renames):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     vfs.create(
         "/home/file.txt",
@@ -209,20 +173,13 @@ def risky_rename_chain(number_of_renames):
 
         current_path = new_path
 
-    return make_sample(
-        vfs,
-        transaction,
-        1
-    )
+    return make_sample(vfs, transaction, 1)
 
 
 def risky_many_links(number_of_links):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     vfs.create(
         "/home/file.txt",
@@ -245,11 +202,7 @@ def risky_many_links(number_of_links):
         + ".txt"
     )
 
-    return make_sample(
-        vfs,
-        transaction,
-        1
-    )
+    return make_sample(vfs, transaction, 1)
 
 
 def risky_mixed_operations(
@@ -258,10 +211,7 @@ def risky_mixed_operations(
 ):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     vfs.create(
         "/home/file.txt",
@@ -294,20 +244,13 @@ def risky_mixed_operations(
 
         current_path = new_path
 
-    return make_sample(
-        vfs,
-        transaction,
-        1
-    )
+    return make_sample(vfs, transaction, 1)
 
 
 def risky_multiple_file_renames(number_of_files):
     vfs = VirtualFileSystem()
 
-    vfs.create(
-        "/home",
-        "directory"
-    )
+    vfs.create("/home", "directory")
 
     for i in range(1, number_of_files + 1):
 
@@ -322,11 +265,9 @@ def risky_multiple_file_renames(number_of_files):
 
         vfs.rename(
             "/home/file"
-            + str(i)
-            + ".txt",
+            + str(i) + ".txt",
             "/home/tmp"
-            + str(i)
-            + ".txt"
+            + str(i) + ".txt"
         )
 
     transaction = vfs.rename(
@@ -338,11 +279,7 @@ def risky_multiple_file_renames(number_of_files):
         + ".txt"
     )
 
-    return make_sample(
-        vfs,
-        transaction,
-        1
-    )
+    return make_sample(vfs, transaction, 1)
 
 
 # =====================================================
@@ -357,171 +294,114 @@ def generate_dataset():
     # NORMAL SAMPLES
     # -------------------------------------------------
 
-    samples.append(
-        normal_create(1)
-    )
+    samples.append(normal_create(1))
+    samples.append(normal_create(2))
+    samples.append(normal_create(3))
+    samples.append(normal_create(4))
 
-    samples.append(
-        normal_create(2)
-    )
+    samples.append(normal_write(10))
+    samples.append(normal_write(100))
+    samples.append(normal_write(500))
+    samples.append(normal_write(1000))
 
-    samples.append(
-        normal_create(3)
-    )
+    samples.append(normal_open_close("r"))
+    samples.append(normal_open_close("w"))
+    samples.append(normal_open_close("a"))
 
-    samples.append(
-        normal_create(4)
-    )
+    samples.append(normal_rename(1))
+    samples.append(normal_rename(2))
+    samples.append(normal_rename(3))
 
-    samples.append(
-        normal_write(10)
-    )
+    samples.append(normal_hard_link(1))
+    samples.append(normal_hard_link(2))
+    samples.append(normal_hard_link(3))
 
-    samples.append(
-        normal_write(100)
-    )
-
-    samples.append(
-        normal_write(500)
-    )
-
-    samples.append(
-        normal_write(1000)
-    )
-
-    samples.append(
-        normal_open_close("r")
-    )
-
-    samples.append(
-        normal_open_close("w")
-    )
-
-    samples.append(
-        normal_open_close("a")
-    )
-
-    samples.append(
-        normal_rename(1)
-    )
-
-    samples.append(
-        normal_rename(2)
-    )
-
-    samples.append(
-        normal_rename(3)
-    )
-
-    samples.append(
-        normal_hard_link(1)
-    )
-
-    samples.append(
-        normal_hard_link(2)
-    )
-
-    samples.append(
-        normal_hard_link(3)
-    )
-
-    samples.append(
-        normal_create(5)
-    )
-
-    samples.append(
-        normal_write(250)
-    )
-
-    samples.append(
-        normal_write(750)
-    )
+    samples.append(normal_create(5))
+    samples.append(normal_write(250))
+    samples.append(normal_write(750))
 
     # -------------------------------------------------
     # RISKY SAMPLES
     # -------------------------------------------------
 
-    samples.append(
-        risky_rename_chain(2)
-    )
+    samples.append(risky_rename_chain(2))
+    samples.append(risky_rename_chain(3))
+    samples.append(risky_rename_chain(4))
+    samples.append(risky_rename_chain(5))
 
-    samples.append(
-        risky_rename_chain(3)
-    )
+    samples.append(risky_many_links(2))
+    samples.append(risky_many_links(3))
+    samples.append(risky_many_links(4))
+    samples.append(risky_many_links(5))
 
-    samples.append(
-        risky_rename_chain(4)
-    )
+    samples.append(risky_mixed_operations(2, 2))
+    samples.append(risky_mixed_operations(3, 2))
+    samples.append(risky_mixed_operations(2, 3))
+    samples.append(risky_mixed_operations(3, 3))
+    samples.append(risky_mixed_operations(4, 3))
 
-    samples.append(
-        risky_rename_chain(5)
-    )
+    samples.append(risky_multiple_file_renames(2))
+    samples.append(risky_multiple_file_renames(3))
+    samples.append(risky_multiple_file_renames(4))
 
-    samples.append(
-        risky_many_links(2)
-    )
-
-    samples.append(
-        risky_many_links(3)
-    )
-
-    samples.append(
-        risky_many_links(4)
-    )
-
-    samples.append(
-        risky_many_links(5)
-    )
-
-    samples.append(
-        risky_mixed_operations(2, 2)
-    )
-
-    samples.append(
-        risky_mixed_operations(3, 2)
-    )
-
-    samples.append(
-        risky_mixed_operations(2, 3)
-    )
-
-    samples.append(
-        risky_mixed_operations(3, 3)
-    )
-
-    samples.append(
-        risky_mixed_operations(4, 3)
-    )
-
-    samples.append(
-        risky_multiple_file_renames(2)
-    )
-
-    samples.append(
-        risky_multiple_file_renames(3)
-    )
-
-    samples.append(
-        risky_multiple_file_renames(4)
-    )
-
-    samples.append(
-        risky_rename_chain(6)
-    )
-
-    samples.append(
-        risky_many_links(6)
-    )
-
-    samples.append(
-        risky_mixed_operations(4, 4)
-    )
-
-    samples.append(
-        risky_multiple_file_renames(5)
-    )
+    samples.append(risky_rename_chain(6))
+    samples.append(risky_many_links(6))
+    samples.append(risky_mixed_operations(4, 4))
+    samples.append(risky_multiple_file_renames(5))
 
     return samples
+
+
+# =====================================================
+# SPLIT DATASET
+# =====================================================
+
+def split_dataset(samples):
+
+    normal_samples = []
+    risky_samples = []
+
+    for sample in samples:
+
+        if sample["label"] == 0:
+            normal_samples.append(sample)
+
+        else:
+            risky_samples.append(sample)
+
+    # Shuffle both classes separately
+    random.shuffle(normal_samples)
+    random.shuffle(risky_samples)
+
+    # 70% of each class for training
+    # 15% of each class for validation
+    # 15% of each class for testing
+
+    normal_train = normal_samples[:14]
+    normal_validation = normal_samples[14:17]
+    normal_test = normal_samples[17:20]
+
+    risky_train = risky_samples[:14]
+    risky_validation = risky_samples[14:17]
+    risky_test = risky_samples[17:20]
+
+    train_samples = normal_train + risky_train
+    validation_samples = (
+        normal_validation +
+        risky_validation
+    )
+    test_samples = normal_test + risky_test
+
+    # Shuffle final splits
+    random.shuffle(train_samples)
+    random.shuffle(validation_samples)
+    random.shuffle(test_samples)
+
+    return (
+        train_samples,
+        validation_samples,
+        test_samples
+    )
 
 
 # =====================================================
@@ -532,6 +412,10 @@ if __name__ == "__main__":
 
     dataset = generate_dataset()
 
+    train_samples, validation_samples, test_samples = (
+        split_dataset(dataset)
+    )
+
     print()
     print("DATASET CREATED")
     print("----------------")
@@ -541,45 +425,92 @@ if __name__ == "__main__":
         len(dataset)
     )
 
-    normal_count = 0
-    risky_count = 0
-
-    for index, sample in enumerate(dataset):
-
-        if sample["label"] == 0:
-            normal_count += 1
-        else:
-            risky_count += 1
-
-        print(
-            "Sample",
-            index + 1,
-            "| Label:",
-            sample["label"],
-            "| Touched:",
-            sample["touched_inodes"],
-            "| Inodes:",
-            sample["graph"]["inode"].x.shape[0],
-            "| Dirents:",
-            sample["graph"]["dirent"].x.shape[0],
-            "| Links:",
-            sample["graph"]["link"].x.shape[0],
-            "| FDs:",
-            sample["graph"]["fd"].x.shape[0],
-            "| Renames:",
-            sample["graph"]["rename"].x.shape[0]
-        )
-
     print()
-    print(
-        "NORMAL SAMPLES:",
-        normal_count
+    print("TRAINING SET")
+    print("------------")
+
+    train_normal = sum(
+        1 for sample in train_samples
+        if sample["label"] == 0
+    )
+
+    train_risky = sum(
+        1 for sample in train_samples
+        if sample["label"] == 1
     )
 
     print(
-        "RISKY SAMPLES:",
-        risky_count
+        "Total:",
+        len(train_samples)
+    )
+
+    print(
+        "Normal:",
+        train_normal
+    )
+
+    print(
+        "Risky:",
+        train_risky
     )
 
     print()
-    print("DATASET TEST COMPLETE")
+    print("VALIDATION SET")
+    print("--------------")
+
+    validation_normal = sum(
+        1 for sample in validation_samples
+        if sample["label"] == 0
+    )
+
+    validation_risky = sum(
+        1 for sample in validation_samples
+        if sample["label"] == 1
+    )
+
+    print(
+        "Total:",
+        len(validation_samples)
+    )
+
+    print(
+        "Normal:",
+        validation_normal
+    )
+
+    print(
+        "Risky:",
+        validation_risky
+    )
+
+    print()
+    print("TEST SET")
+    print("--------")
+
+    test_normal = sum(
+        1 for sample in test_samples
+        if sample["label"] == 0
+    )
+
+    test_risky = sum(
+        1 for sample in test_samples
+        if sample["label"] == 1
+    )
+
+    print(
+        "Total:",
+        len(test_samples)
+    )
+
+    print(
+        "Normal:",
+        test_normal
+    )
+
+    print(
+        "Risky:",
+        test_risky
+    )
+
+    print()
+    print("DATASET SPLIT TEST COMPLETE")
