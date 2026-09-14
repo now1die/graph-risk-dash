@@ -22,3 +22,43 @@ def get_touched_inode_indices(vfs, transaction):
             )
 
     return touched_indices
+
+
+def get_1hop_inode_neighbors(graph, touched_indices):
+    """
+    Find inode nodes that are directly connected
+    to the touched inode nodes.
+
+    Returns the touched nodes plus their neighbors.
+    """
+
+    neighbors = set(touched_indices)
+
+    # ---------------------------------------------------------
+    # INODE -> INODE RELATIONS
+    # ---------------------------------------------------------
+
+    inode_relations = [
+        ("inode", "links", "inode"),
+        ("inode", "renames", "inode")
+    ]
+
+    for relation in inode_relations:
+
+        if relation not in graph.edge_types:
+            continue
+
+        edge_index = graph[relation].edge_index
+
+        for source, target in edge_index.t():
+
+            source = int(source)
+            target = int(target)
+
+            if source in touched_indices:
+                neighbors.add(target)
+
+            if target in touched_indices:
+                neighbors.add(source)
+
+    return sorted(neighbors)
