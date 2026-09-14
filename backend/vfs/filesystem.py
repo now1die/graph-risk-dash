@@ -12,6 +12,9 @@ class VirtualFileSystem:
         self.inodes: Dict[str, Inode] = {}
         self.next_inode_id = 1
 
+        # Store directory-entry relationships
+        self.dirents: Dict[str, DirEntry] = {}
+
         self.transaction_log = TransactionLog()
 
         # Create root directory
@@ -60,16 +63,47 @@ class VirtualFileSystem:
         if path in self.inodes:
             raise ValueError("Path already exists")
 
+        if path == "/":
+            raise ValueError("Root already exists")
+
+        # Find parent directory
+        parent_path = path.rsplit("/", 1)[0]
+
+        if parent_path == "":
+            parent_path = "/"
+
+        if parent_path not in self.inodes:
+            raise ValueError("Parent directory does not exist")
+
+        parent_inode = self.inodes[parent_path]
+
+        if parent_inode.inode_type != "directory":
+            raise ValueError("Parent is not a directory")
+
+        # Create the inode
         inode = self._add_inode(path, inode_type)
 
         inode.dirty = True
 
+        # Create directory entry
+        name = path.rsplit("/", 1)[-1]
+
+        dirent = DirEntry(
+            name=name,
+            inode_id=inode.inode_id,
+            parent_inode_id=parent_inode.inode_id
+        )
+
+        self.dirents[path] = dirent
+
         return self._create_transaction(
             "create",
-            [inode.inode_id],
+            [parent_inode.inode_id, inode.inode_id],
             {
                 "path": path,
-                "inode_type": inode_type
+                "inode_type": inode_type,
+                "parent_path": parent_path,
+                "name": name
             }
         )
 
@@ -104,9 +138,17 @@ class VirtualFileSystem:
         if path not in self.inodes:
             raise ValueError("Path does not exist")
 
+        if path == "/":
+            raise ValueError("Cannot unlink root directory")
+
         inode = self.inodes[path]
 
+        # Remove the inode
         del self.inodes[path]
+
+        # Remove its directory entry
+        if path in self.dirents:
+            del self.dirents[path]
 
         return self._create_transaction(
             "unlink",
@@ -128,19 +170,47 @@ class VirtualFileSystem:
         if new_path in self.inodes:
             raise ValueError("Destination path already exists")
 
+        if old_path == "/":
+            raise ValueError("Cannot rename root directory")
+
+        # Find destination parent directory
+        new_parent_path = new_path.rsplit("/", 1)[0]
+
+        if new_parent_path == "":
+            new_parent_path = "/"
+
+        if new_parent_path not in self.inodes:
+            raise ValueError("Destination parent directory does not exist")
+
+        new_parent_inode = self.inodes[new_parent_path]
+
+        if new_parent_inode.inode_type != "directory":
+            raise ValueError("Destination parent is not a directory")
+
         inode = self.inodes.pop(old_path)
 
+        # Update inode path
         inode.path = new_path
         inode.dirty = True
 
         self.inodes[new_path] = inode
 
+        # Update directory entry
+        if old_path in self.dirents:
+            dirent = self.dirents.pop(old_path)
+
+            dirent.name = new_path.rsplit("/", 1)[-1]
+            dirent.parent_inode_id = new_parent_inode.inode_id
+
+            self.dirents[new_path] = dirent
+
         return self._create_transaction(
             "rename",
-            [inode.inode_id],
+            [inode.inode_id, new_parent_inode.inode_id],
             {
                 "old_path": old_path,
-                "new_path": new_path
+                "new_path": new_path,
+                "new_parent_path": new_parent_path
             }
         )
 
@@ -151,6 +221,10 @@ class VirtualFileSystem:
     def get_all_inodes(self):
 
         return list(self.inodes.values())
+
+    def get_all_dirents(self):
+
+        return list(self.dirents.values())
 
     def get_transactions(self):
 
