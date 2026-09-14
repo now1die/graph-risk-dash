@@ -2,7 +2,7 @@ from datetime import datetime
 import uuid
 from typing import Dict, List
 
-from .models import Inode
+from .models import Inode, DirEntry
 from .transaction import Transaction, TransactionLog
 
 
