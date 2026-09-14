@@ -4,7 +4,8 @@ from vfs.filesystem import VirtualFileSystem
 from graph.builder import build_graph
 from graph.subgraph import (
     get_touched_inode_indices,
-    get_2hop_subgraph
+    get_2hop_subgraph,
+    extract_2hop_subgraph
 )
 from gnn.model import RiskGNN
 
@@ -196,19 +197,91 @@ print(touched_indices)
 
 
 # =========================================
-# 2-HOP SUBGRAPH
+# 2-HOP SUBGRAPH INDICES
 # =========================================
 
-subgraph = get_2hop_subgraph(
+subgraph_indices = get_2hop_subgraph(
     graph,
     touched_indices
 )
 
 print()
 print("=========================================")
-print("2-HOP SUBGRAPH")
+print("2-HOP SUBGRAPH INDICES")
+print("=========================================")
+print(subgraph_indices)
+
+
+# =========================================
+# EXTRACT ACTUAL 2-HOP GRAPH
+# =========================================
+
+subgraph = extract_2hop_subgraph(
+    graph,
+    touched_indices
+)
+
+print()
+print("=========================================")
+print("EXTRACTED 2-HOP GRAPH")
 print("=========================================")
 print(subgraph)
+
+
+# =========================================
+# EXTRACTED NODE TYPES
+# =========================================
+
+print()
+print("=========================================")
+print("EXTRACTED NODE TYPES")
+print("=========================================")
+print(subgraph.node_types)
+
+
+# =========================================
+# EXTRACTED EDGE TYPES
+# =========================================
+
+print()
+print("=========================================")
+print("EXTRACTED EDGE TYPES")
+print("=========================================")
+print(subgraph.edge_types)
+
+
+# =========================================
+# EXTRACTED NODE COUNTS
+# =========================================
+
+print()
+print("=========================================")
+print("EXTRACTED NODE COUNTS")
+print("=========================================")
+
+for node_type in subgraph.node_types:
+
+    print(
+        node_type,
+        subgraph[node_type].x.shape
+    )
+
+
+# =========================================
+# EXTRACTED EDGE COUNTS
+# =========================================
+
+print()
+print("=========================================")
+print("EXTRACTED EDGE COUNTS")
+print("=========================================")
+
+for edge_type in subgraph.edge_types:
+
+    print(
+        edge_type,
+        subgraph[edge_type].edge_index.shape
+    )
 
 
 # =========================================
