@@ -14,7 +14,6 @@ def get_touched_inode_indices(vfs, transaction):
     touched_indices = []
 
     for inode_id in transaction.inodes_touched:
-
         if inode_id in inode_id_to_index:
             touched_indices.append(
                 inode_id_to_index[inode_id]
@@ -23,11 +22,147 @@ def get_touched_inode_indices(vfs, transaction):
     return touched_indices
 
 
+def get_neighbors(graph, node_type, node_index):
+    """
+    Find all nodes directly connected to one node.
+
+    Returns a list of:
+        (node_type, node_index)
+    """
+
+    neighbors = []
+
+    # -------------------------------------------------
+    # INODE -> DIRENT
+    # -------------------------------------------------
+    if node_type == "inode":
+
+        relation = ("inode", "contains", "dirent")
+
+        if relation in graph.edge_types:
+            edge_index = graph[relation].edge_index
+
+            for source, target in edge_index.t():
+                source = int(source)
+                target = int(target)
+
+                if source == node_index:
+                    neighbors.append(
+                        ("dirent", target)
+                    )
+
+    # -------------------------------------------------
+    # DIRENT -> INODE
+    # -------------------------------------------------
+    if node_type == "dirent":
+
+        relation = ("dirent", "contains", "inode")
+
+        if relation in graph.edge_types:
+            edge_index = graph[relation].edge_index
+
+            for source, target in edge_index.t():
+                source = int(source)
+                target = int(target)
+
+                if source == node_index:
+                    neighbors.append(
+                        ("inode", target)
+                    )
+
+    # -------------------------------------------------
+    # FD -> INODE
+    # -------------------------------------------------
+    if node_type == "fd":
+
+        relation = ("fd", "open_by", "inode")
+
+        if relation in graph.edge_types:
+            edge_index = graph[relation].edge_index
+
+            for source, target in edge_index.t():
+                source = int(source)
+                target = int(target)
+
+                if source == node_index:
+                    neighbors.append(
+                        ("inode", target)
+                    )
+
+    # -------------------------------------------------
+    # INODE -> FD
+    # -------------------------------------------------
+    if node_type == "inode":
+
+        relation = ("fd", "open_by", "inode")
+
+        if relation in graph.edge_types:
+            edge_index = graph[relation].edge_index
+
+            for source, target in edge_index.t():
+                source = int(source)
+                target = int(target)
+
+                if target == node_index:
+                    neighbors.append(
+                        ("fd", source)
+                    )
+
+    # -------------------------------------------------
+    # INODE <-> INODE LINKS
+    # -------------------------------------------------
+    if node_type == "inode":
+
+        relation = ("inode", "links", "inode")
+
+        if relation in graph.edge_types:
+            edge_index = graph[relation].edge_index
+
+            for source, target in edge_index.t():
+                source = int(source)
+                target = int(target)
+
+                if source == node_index:
+                    neighbors.append(
+                        ("inode", target)
+                    )
+
+                if target == node_index:
+                    neighbors.append(
+                        ("inode", source)
+                    )
+
+    # -------------------------------------------------
+    # INODE <-> INODE RENAMES
+    # -------------------------------------------------
+    if node_type == "inode":
+
+        relation = ("inode", "renames", "inode")
+
+        if relation in graph.edge_types:
+            edge_index = graph[relation].edge_index
+
+            for source, target in edge_index.t():
+                source = int(source)
+                target = int(target)
+
+                if source == node_index:
+                    neighbors.append(
+                        ("inode", target)
+                    )
+
+                if target == node_index:
+                    neighbors.append(
+                        ("inode", source)
+                    )
+
+    return neighbors
+
+
 def get_1hop_inode_neighbors(graph, touched_indices):
     """
-    Find nodes directly connected to the touched inode nodes.
-
-    Returns node identifiers grouped by node type.
+    Find all nodes directly connected to
+    the touched inode nodes.
     """
 
     result = {
@@ -36,86 +171,16 @@ def get_1hop_inode_neighbors(graph, touched_indices):
         "fd": set()
     }
 
-    # ---------------------------------------------------------
-    # INODE -> DIRENT
-    # ---------------------------------------------------------
+    for inode_index in touched_indices:
 
-    relation = ("inode", "contains", "dirent")
+        neighbors = get_neighbors(
+            graph,
+            "inode",
+            inode_index
+        )
 
-    if relation in graph.edge_types:
-
-        edge_index = graph[relation].edge_index
-
-        for source, target in edge_index.t():
-
-            source = int(source)
-            target = int(target)
-
-            if source in touched_indices:
-                result["dirent"].add(target)
-
-    # ---------------------------------------------------------
-    # DIRENT -> INODE
-    # ---------------------------------------------------------
-
-    relation = ("dirent", "contains", "inode")
-
-    if relation in graph.edge_types:
-
-        edge_index = graph[relation].edge_index
-
-        for source, target in edge_index.t():
-
-            source = int(source)
-            target = int(target)
-
-            if target in touched_indices:
-                result["dirent"].add(source)
-
-    # ---------------------------------------------------------
-    # FD -> INODE
-    # ---------------------------------------------------------
-
-    relation = ("fd", "open_by", "inode")
-
-    if relation in graph.edge_types:
-
-        edge_index = graph[relation].edge_index
-
-        for source, target in edge_index.t():
-
-            source = int(source)
-            target = int(target)
-
-            if target in touched_indices:
-                result["fd"].add(source)
-
-    # ---------------------------------------------------------
-    # INODE -> INODE
-    # ---------------------------------------------------------
-
-    inode_relations = [
-        ("inode", "links", "inode"),
-        ("inode", "renames", "inode")
-    ]
-
-    for relation in inode_relations:
-
-        if relation not in graph.edge_types:
-            continue
-
-        edge_index = graph[relation].edge_index
-
-        for source, target in edge_index.t():
-
-            source = int(source)
-            target = int(target)
-
-            if source in touched_indices:
-                result["inode"].add(target)
-
-            if target in touched_indices:
-                result["inode"].add(source)
+        for node_type, node_index in neighbors:
+            result[node_type].add(node_index)
 
     result["inode"] = sorted(result["inode"])
     result["dirent"] = sorted(result["dirent"])
@@ -126,66 +191,68 @@ def get_1hop_inode_neighbors(graph, touched_indices):
 
 def get_2hop_subgraph(graph, touched_indices):
     """
-    Find nodes within two graph hops
+    Find all nodes within two graph hops
     of the touched inode nodes.
 
-    Returns node identifiers grouped by node type.
+    Traversal works across all node types.
     """
 
+    # -------------------------------------------------
+    # STARTING NODES
+    # -------------------------------------------------
+
+    visited = set()
+
+    frontier = []
+
+    for inode_index in touched_indices:
+
+        node = ("inode", inode_index)
+
+        visited.add(node)
+        frontier.append(node)
+
+    # -------------------------------------------------
+    # HOP 1 + HOP 2
+    # -------------------------------------------------
+
+    for _ in range(2):
+
+        next_frontier = []
+
+        for node_type, node_index in frontier:
+
+            neighbors = get_neighbors(
+                graph,
+                node_type,
+                node_index
+            )
+
+            for neighbor in neighbors:
+
+                if neighbor not in visited:
+
+                    visited.add(neighbor)
+                    next_frontier.append(neighbor)
+
+        frontier = next_frontier
+
+    # -------------------------------------------------
+    # CONVERT TO GROUPED RESULT
+    # -------------------------------------------------
+
     result = {
-        "inode": set(touched_indices),
+        "inode": set(),
         "dirent": set(),
         "fd": set()
     }
 
-    # ---------------------------------------------------------
-    # FIRST HOP
-    # ---------------------------------------------------------
+    for node_type, node_index in visited:
 
-    first_hop = get_1hop_inode_neighbors(
-        graph,
-        touched_indices
-    )
+        result[node_type].add(node_index)
 
-    for node_type in result:
-
-        result[node_type].update(
-            first_hop[node_type]
-        )
-
-    # ---------------------------------------------------------
-    # SECOND HOP
-    # ---------------------------------------------------------
-
-    second_hop_inode_indices = list(
-        result["inode"]
-    )
-
-    second_hop = get_1hop_inode_neighbors(
-        graph,
-        second_hop_inode_indices
-    )
-
-    for node_type in result:
-
-        result[node_type].update(
-            second_hop[node_type]
-        )
-
-    # ---------------------------------------------------------
-    # SORT RESULTS
-    # ---------------------------------------------------------
-
-    result["inode"] = sorted(
-        result["inode"]
-    )
-
-    result["dirent"] = sorted(
-        result["dirent"]
-    )
-
-    result["fd"] = sorted(
-        result["fd"]
-    )
+    result["inode"] = sorted(result["inode"])
+    result["dirent"] = sorted(result["dirent"])
+    result["fd"] = sorted(result["fd"])
 
     return result
