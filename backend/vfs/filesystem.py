@@ -132,7 +132,62 @@ class VirtualFileSystem:
                 "bytes_written": size
             }
         )
+    def link(
+        self,
+        existing_path: str,
+        new_path: str
+    ):
 
+        if existing_path not in self.inodes:
+            raise ValueError("Source path does not exist")
+
+        if new_path in self.inodes:
+            raise ValueError("Destination path already exists")
+
+        inode = self.inodes[existing_path]
+
+        if inode.inode_type != "file":
+            raise ValueError("Hard links can only be created for files")
+
+        parent_path = new_path.rsplit("/", 1)[0]
+
+        if parent_path == "":
+            parent_path = "/"
+
+        if parent_path not in self.inodes:
+            raise ValueError("Parent directory does not exist")
+
+        parent_inode = self.inodes[parent_path]
+
+        if parent_inode.inode_type != "directory":
+            raise ValueError("Parent is not a directory")
+
+        # Create another directory entry pointing
+        # to the same inode
+        name = new_path.rsplit("/", 1)[-1]
+
+        dirent = DirEntry(
+            name=name,
+            inode_id=inode.inode_id,
+            parent_inode_id=parent_inode.inode_id
+        )
+
+        self.dirents[new_path] = dirent
+
+        # Increase the inode's hard-link count
+        inode.link_count += 1
+        inode.dirty = True
+
+        return self._create_transaction(
+            "link",
+            [inode.inode_id, parent_inode.inode_id],
+            {
+                "existing_path": existing_path,
+                "new_path": new_path,
+                "parent_path": parent_path,
+                "name": name
+            }
+        )
     def unlink(self, path: str):
 
         if path not in self.inodes:
