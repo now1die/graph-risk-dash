@@ -495,3 +495,34 @@ def extract_2hop_subgraph(
             ).t().contiguous()
 
     return subgraph
+def get_subgraph_touched_inode_indices(
+    graph,
+    touched_indices
+):
+    """
+    Convert original touched inode indices into
+    their new indices inside the extracted 2-hop subgraph.
+    """
+
+    node_indices = get_2hop_subgraph(
+        graph,
+        touched_indices
+    )
+
+    index_map = {
+        old_index: new_index
+        for new_index, old_index
+        in enumerate(node_indices["inode"])
+    }
+
+    new_touched_indices = []
+
+    for old_index in touched_indices:
+
+        if old_index in index_map:
+
+            new_touched_indices.append(
+                index_map[old_index]
+            )
+
+    return new_touched_indices    
