@@ -18,7 +18,7 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-3 border-b border-border pb-5 sm:flex-row sm:items-end sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold text-foreground">{title}</h1>
+        <h1 className="editorial-title text-foreground">{title}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{description}</p>
       </div>
       {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
@@ -46,13 +46,13 @@ export function Panel({
   return (
     <section
       className={cn(
-        "rounded-lg border border-border bg-card shadow-[0_1px_0_0_color-mix(in_oklab,var(--foreground)_6%,transparent)_inset]",
+        "research-panel",
         className,
       )}
     >
       {title ? (
-        <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div className="flex items-center gap-2">
+        <header className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border">
+          <div className="flex min-w-0 items-center gap-2">
             {Icon ? <Icon className="size-4 text-primary" aria-hidden /> : null}
             <div>
               <h2 className="text-sm font-semibold text-foreground">{title}</h2>
@@ -168,7 +168,7 @@ export function StatCard({
     watch: "text-watch",
   } as const;
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
+    <div className="research-stat">
       <div className="flex items-center justify-between">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">{label}</p>
         {Icon ? <Icon className="size-4 text-muted-foreground" aria-hidden /> : null}

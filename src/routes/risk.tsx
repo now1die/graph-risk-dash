@@ -30,6 +30,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/risk")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Risk Analysis — VFSim" },
       {
         name: "description",
@@ -65,7 +67,7 @@ function RiskPage() {
     <div className="space-y-6">
       <PageHeader
         title="Risk analysis"
-        description="The GNN scores each transaction before it commits. Above the threshold, the simulator forces full journaling and an extra flush; below it, the fast path is taken."
+        description="Transaction risk and a proposed journaling policy. Demo scores and attribution are illustrative; moving the threshold does not enforce backend journaling."
         actions={<TransactionPicker />}
       />
 
@@ -80,7 +82,7 @@ function RiskPage() {
               <div className="space-y-4">
                 <RiskGauge score={score} threshold={riskThreshold} />
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>model confidence</span>
+                  <span>reported confidence</span>
                   <span className="tabular text-foreground">
                     {((assessment.data?.confidence ?? 0) * 100).toFixed(1)}%
                   </span>
@@ -95,7 +97,7 @@ function RiskPage() {
             )}
           </Panel>
 
-          <Panel title="Risk threshold" subtitle="journaling policy control">
+          <Panel title="Risk threshold" subtitle="proposed policy preview">
             <Slider
               value={[riskThreshold]}
               min={0}
@@ -105,9 +107,9 @@ function RiskPage() {
               aria-label="Risk threshold"
             />
             <div className="mt-2 flex justify-between text-[11px] text-muted-foreground">
-              <span>0.00 fast path</span>
+              <span>0.00 journal more</span>
               <span className="tabular text-primary">{riskThreshold.toFixed(2)}</span>
-              <span>1.00 always journal</span>
+              <span>1.00 journal less</span>
             </div>
 
             <div
@@ -129,12 +131,12 @@ function RiskPage() {
                 ) : (
                   <ShieldCheck className="size-4" aria-hidden />
                 )}
-                {shouldJournal ? "Force full journaling" : "Fast path allowed"}
+                {shouldJournal ? "Recommend full journaling" : "Fast path proposed"}
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {shouldJournal
-                  ? `Risk ${score.toFixed(2)} ≥ threshold ${riskThreshold.toFixed(2)} — every write is journaled and an fsync barrier is inserted before commit.`
-                  : `Risk ${score.toFixed(2)} < threshold ${riskThreshold.toFixed(2)} — metadata-only journaling; data writes may be reordered by the device.`}
+                  ? `Risk ${score.toFixed(2)} ≥ threshold ${riskThreshold.toFixed(2)} — full journaling is recommended, not executed by this control.`
+                  : `Risk ${score.toFixed(2)} < threshold ${riskThreshold.toFixed(2)} — fast path is proposed; durability has not been verified.`}
               </p>
             </div>
           </Panel>

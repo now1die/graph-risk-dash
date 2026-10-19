@@ -19,6 +19,8 @@ import { api, type FsNode } from "@/services/api";
 export const Route = createFileRoute("/graph")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Graph Explorer — VFSim" },
       {
         name: "description",

@@ -9,6 +9,8 @@ import { API_BASE_URL, BACKEND_MODE, ENDPOINTS, api } from "@/services/api";
 export const Route = createFileRoute("/settings")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Settings — VFSim" },
       {
         name: "description",
@@ -46,7 +48,7 @@ function SettingsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Settings"
-        description="This build is frontend-only. All data flows through one API service module, so pointing it at the FastAPI simulator is a single environment variable."
+        description="Connection status and the expected API contract. The current research backend requires endpoint and response mapping before live results can be displayed."
         actions={<BackendStatusBadge />}
       />
 
