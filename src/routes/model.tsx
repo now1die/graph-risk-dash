@@ -26,6 +26,8 @@ import { api } from "@/services/api";
 export const Route = createFileRoute("/model")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "GNN Model — VFSim" },
       {
         name: "description",
@@ -49,7 +51,7 @@ function ModelPage() {
     <div className="space-y-6">
       <PageHeader
         title="GNN risk model"
-        description="Inference runs entirely in the Python backend. This page reports the served checkpoint's architecture and evaluation results."
+        description="Model architecture and evaluation display. In DEMO mode, metrics, curves and dates are fixtures, not evidence of a trained checkpoint."
       />
 
       {model.isPending ? (
@@ -127,13 +129,13 @@ function ModelPage() {
                 ))}
               </ol>
               <p className="mt-3 text-[11px] text-muted-foreground">
-                Last trained{" "}
+                Reported training date{" "}
                 {new Date(model.data.lastTrained).toISOString().replace("T", " ").slice(0, 16)} UTC
               </p>
             </Panel>
           </div>
 
-          <Panel title="Feature importance" subtitle="permutation importance on the eval split">
+          <Panel title="Feature importance" subtitle="illustrative importance in DEMO mode">
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart

@@ -11,3 +11,6 @@
 - [x] Settings page (backend status + FastAPI contract)
 - [x] Loading / error / empty states
 - [x] Crash Lab: transaction run, crash injection, journal recovery flow
+- [ ] Editorial frontend redesign with all existing routes and controls retained
+- [ ] Inspect current GitHub research progress and report actual backend limitations
+- [ ] Verify graph, transactions, risk and crash flow on desktop and mobile

@@ -21,6 +21,8 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/simulation")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Crash Lab — VFSim" },
       {
         name: "description",
@@ -81,7 +83,7 @@ function SimulationPage() {
       setCursor(i);
     }
     setPhase("recovered");
-    toast.success("Transaction committed cleanly");
+    toast.success("Transaction walkthrough complete");
   };
 
   const recover = async () => {
@@ -92,14 +94,14 @@ function SimulationPage() {
       setRecoveryStep(i);
     }
     setPhase("recovered");
-    toast.success("Journal replay complete — filesystem consistent");
+    toast.success("Recovery walkthrough complete — consistency not verified");
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Crash lab"
-        description="Step a transaction through the simulator, inject a crash at a chosen point, then replay the journal and watch the recovery sequence."
+        description="Explore a transaction timeline and crash/recovery walkthrough. DEMO outcomes are illustrative and do not establish crash consistency."
         actions={<TransactionPicker />}
       />
 

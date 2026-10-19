@@ -168,7 +168,7 @@ export function GraphExplorer({
         fitView
         proOptions={{ hideAttribution: true }}
         onNodeClick={(_, node) => onSelect((node.data as unknown as NodeData).node)}
-        colorMode="dark"
+        colorMode="light"
       >
         <Background variant={BackgroundVariant.Dots} gap={22} color="var(--grid)" />
         <MiniMap

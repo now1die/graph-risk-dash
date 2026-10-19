@@ -19,6 +19,8 @@ import { api } from "@/services/api";
 export const Route = createFileRoute("/transactions")({
   head: () => ({
     meta: [
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Transactions — VFSim" },
       {
         name: "description",
@@ -49,7 +51,7 @@ function TransactionsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Transactions"
-        description="Every replayed transaction from the simulator, scored by the GNN. Select a row to open the full operation log and risk attribution."
+        description="Filesystem transaction records, operations and risk attribution. In DEMO mode, these records and scores are bundled fixtures."
         actions={
           <Button size="sm" variant="outline" onClick={() => setDrawerOpen(true)}>
             Open details for {selectedTxId}
